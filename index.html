@@ -5,9 +5,21 @@
     <title>Dash JavaScript Player</title>
     <meta name="description" content="" />
 
+    <!--
+        JSLint
+
+        Directive:
+        /*jslint bitwise: true, continue: false, nomen: true, regexp: true, todo: true */
+
+        Allowed Globals:
+        (javascript) $ alert console setInterval clearInterval
+        (libraries)  Q dijon ObjectIron X2JS
+        (player)     MediaPlayer Dash
+    -->
+
     <style type="text/css" title="currentStyle">
         @import "app/lib/datatables/media/css/demo_table_jui.css";
-	    @import "app/lib/jquery/css/smoothness/jquery-ui-1.9.2.custom.min.css";
+        @import "app/lib/jquery/css/smoothness/jquery-ui-1.9.2.custom.min.css";
         @import "app/css/960/reset.css";
         @import "app/css/960/text.css";
         @import "app/css/960/960.css";
@@ -42,6 +54,7 @@
 	<script src="app/js/streaming/VideoModel.js"></script>
 	<script src="app/js/streaming/vo/SegmentRequest.js"></script>
 	<script src="app/js/streaming/ManifestLoader.js"></script>
+	<script src="app/js/streaming/ManifestUpdater.js"></script>
 	<script src="app/js/streaming/MediaSourceExtensions.js"></script>
 	<script src="app/js/streaming/SourceBufferExtensions.js"></script>
 	<script src="app/js/streaming/BufferExtensions.js"></script>
@@ -50,7 +63,11 @@
 	<script src="app/js/streaming/FragmentLoader.js"></script>
 	<script src="app/js/streaming/Stream.js"></script>
 	<script src="app/js/streaming/BufferController.js"></script>
-	<script src="app/js/streaming/rules/BandwidthRule.js"></script>
+	<script src="app/js/streaming/BufferControllerUpdater.js"></script>
+	<script src="app/js/streaming/rules/SwitchRequest.js"></script>
+	<script src="app/js/streaming/rules/DownloadRatioRule.js"></script>
+	<script src="app/js/streaming/rules/InsufficientBufferRule.js"></script>
+	<script src="app/js/streaming/rules/LimitSwitchesRule.js"></script>
 	<script src="app/js/streaming/rules/BaseRulesCollection.js"></script>
 
 	<!-- Metrics -->
@@ -73,12 +90,14 @@
 	<script src="app/js/dash/BaseURLExtensions.js"></script>
 	<script src="app/js/dash/FragmentExtensions.js"></script>
 	<script src="app/js/dash/DashManifestExtensions.js"></script>
+	<script src="app/js/dash/DashMetricsExtensions.js"></script>
 
     <!-- TODO : Make into main.js. -->
     <script>
         var player;
         //var ui;
         var time = -1;
+        var timer;
 
         var videoBufferChart;
         var audioBufferChart;
@@ -247,8 +266,6 @@
 
             if (type == "video")
             {
-                //var newQuality = player.getVideoQuality() - 1;
-                //player.setVideoQuality(newQuality);
                 player.getVideoQuality().then(
                 	function(videoQuality) {
                 		if(videoQuality <= 0) {
@@ -261,8 +278,6 @@
             }
             else
             {
-                //var newQuality = player.getAudioQuality() - 1;
-              	//player.setAudioQuality(newQuality);
               	player.getAudioQuality().then(
               		function(audioQuality) {
               			if(audioQuality <= 0) {
@@ -340,75 +355,150 @@
             {
                 time = newTime;
 
-                var metrics;
-                var bitrateValue, bitrateIndex, numBitrates, bufferLength, fragDuration, fragTime, len;
+                var metrics,
+                    metricsExt = player.getMetricsExt(),
+                    video = e.currentTarget,
+                    bitrateValue,
+                    bandwidthValue,
+                    bitrateIndex,
+                    bitrateIndexValue,
+                    repSwitch,
+                    numBitrates,
+                    numBitratesValue,
+                    bufferLevel,
+                    bufferLength,
+                    bufferLengthValue = 0,
+                    fragDuration,
+                    lastFragmentDuration,
+                    fragTime,
+                    lastFragmentDownloadTime,
+                    httpRequest,
+                    len;
 
                 // video
+                metrics = player.getMetricsFor("video");
 
-                metrics = player.getVideoMetrics();
+                if (metrics) {
 
-                if (metrics)
-                {
-                    bitrateValue = document.getElementById("video-value");
-                    bitrateValue.innerHTML = (metrics.bitrateValue / 1000) + " kbps";
+                    if (metricsExt) {
 
-                    bitrateIndex = document.getElementById("video-index");
-                    bitrateIndex.innerHTML = metrics.bitrateIndex + 1;
+                        repSwitch = metricsExt.getCurrentRepresentationSwitch(metrics);
+                        bufferLevel = metricsExt.getCurrentBufferLevel(metrics);
+                        httpRequest = metricsExt.getCurrentHttpRequest(metrics);
 
-                    numBitrates = document.getElementById("num-video-bitrates");
-                    numBitrates.innerHTML = metrics.maxBitrateIndex;
+                        if (repSwitch !== null) {
+                            bitrateIndexValue = metricsExt.getIndexForRepresentation(repSwitch.to);
+                            bandwidthValue = metricsExt.getBandwidthForRepresentation(repSwitch.to);
+                            bandwidthValue = bandwidthValue / 1000;
+                            bandwidthValue = Math.round(bandwidthValue);
+                        }
 
-                    bufferLength = document.getElementById("video-buffer");
-                    len = metrics.bufferLength.toString();
-                    if (len.length > 5) len = len.substr(0, 4);
-                    bufferLength.innerHTML = len + " seconds";
+                        numBitratesValue = metricsExt.getMaxIndexForBufferType("video");
 
-                    fragDuration = document.getElementById("video-frag-duration");
-                    len = metrics.lastFragmentDuration.toString();
-                    if (len.length > 5) len = len.substr(0, 4);
-                    fragDuration.innerHTML = len + " seconds";
+                        if (bufferLevel !== null) {
+                            bufferLengthValue = bufferLevel.level;
+                        }
 
-                    fragTime = document.getElementById("video-frag-dl-time");
-                    fragTime.innerHTML = metrics.lastFragmentDownloadTime + " seconds";
+                        if (httpRequest !== null) {
+                            lastFragmentDuration = httpRequest.mediaduration;
+                            lastFragmentDownloadTime = httpRequest.tresponse.getTime() - httpRequest.trequest.getTime();
 
-                    series = videoBufferChart.series[0];
-                    x = time;
-                    y = Math.floor(metrics.bufferLength);
-                    series.addPoint([x, y], true, true, false);
+                            // convert milliseconds to seconds
+                            lastFragmentDownloadTime = lastFragmentDownloadTime / 1000;
+                            lastFragmentDuration = lastFragmentDuration.toPrecision(4);
+                        }
+
+                        bitrateValue = document.getElementById("video-value");
+                        bitrateValue.innerHTML = (bandwidthValue) + " kbps";
+
+
+                        bitrateIndex = document.getElementById("video-index");
+                        bitrateIndex.innerHTML = bitrateIndexValue + 1;
+
+                        numBitrates = document.getElementById("num-video-bitrates");
+                        numBitrates.innerHTML = numBitratesValue;
+
+                        bufferLength = document.getElementById("video-buffer");
+                        if (bufferLengthValue > 0) {
+                            bufferLengthValue = bufferLengthValue.toPrecision(5);
+                        }
+                        bufferLength.innerHTML = bufferLengthValue + " seconds";
+
+
+                        fragDuration = document.getElementById("video-frag-duration");
+                        fragDuration.innerHTML = lastFragmentDuration + " seconds";
+
+                        fragTime = document.getElementById("video-frag-dl-time");
+                        fragTime.innerHTML = lastFragmentDownloadTime + " seconds";
+
+                        series = videoBufferChart.series[0];
+                        x = video.currentTime;
+                        y = Math.round(bufferLengthValue);
+                        series.addPoint([x, y], true, true, false);
+                    }
                 }
 
                 // audio
-
-                metrics = player.getAudioMetrics();
+                metrics = player.getMetricsFor("audio");
 
                 if (metrics)
                 {
-                    bitrateValue = document.getElementById("audio-value");
-                    bitrateValue.innerHTML = (metrics.bitrateValue / 1000) + " kbps";
+                    if (metricsExt) {
 
-                    bitrateIndex = document.getElementById("audio-index");
-                    bitrateIndex.innerHTML = metrics.bitrateIndex + 1;
+                        repSwitch = metricsExt.getCurrentRepresentationSwitch(metrics);
+                        bufferLevel = metricsExt.getCurrentBufferLevel(metrics);
+                        httpRequest = metricsExt.getCurrentHttpRequest(metrics);
 
-                    numBitrates = document.getElementById("num-audio-bitrates");
-                    numBitrates.innerHTML = metrics.maxBitrateIndex;
+                        if (repSwitch !== null) {
+                            bitrateIndexValue = metricsExt.getIndexForRepresentation(repSwitch.to);
+                            bandwidthValue = metricsExt.getBandwidthForRepresentation(repSwitch.to);
+                            bandwidthValue = bandwidthValue / 1000;
+                            bandwidthValue = Math.round(bandwidthValue);
+                        }
 
-                    bufferLength = document.getElementById("audio-buffer");
-                    len = metrics.bufferLength.toString();
-                    if (len.length > 5) len = len.substr(0, 4);
-                    bufferLength.innerHTML = len + " seconds";
+                        numBitratesValue = metricsExt.getMaxIndexForBufferType("audio");
 
-                    fragDuration = document.getElementById("audio-frag-duration");
-                    len = metrics.lastFragmentDuration.toString();
-                    if (len.length > 5) len = len.substr(0, 4);
-                    fragDuration.innerHTML = len + " seconds";
+                        if (bufferLevel !== null) {
+                            bufferLengthValue = bufferLevel.level;
+                        }
 
-                    fragTime = document.getElementById("audio-frag-dl-time");
-                    fragTime.innerHTML = metrics.lastFragmentDownloadTime + " seconds";
+                        if (httpRequest !== null) {
+                            lastFragmentDuration = httpRequest.mediaduration;
+                            lastFragmentDownloadTime = httpRequest.tresponse.getTime() - httpRequest.trequest.getTime();
 
-                    series = audioBufferChart.series[0];
-                    x = time;
-                    y = Math.floor(metrics.bufferLength);
-                    series.addPoint([x, y], true, true, false);
+                            // convert milliseconds to seconds
+                            lastFragmentDownloadTime = lastFragmentDownloadTime / 1000;
+                            lastFragmentDuration = lastFragmentDuration.toPrecision(4);
+                        }
+
+                        bitrateValue = document.getElementById("audio-value");
+                        bitrateValue.innerHTML = (bandwidthValue) + " kbps";
+
+
+                        bitrateIndex = document.getElementById("audio-index");
+                        bitrateIndex.innerHTML = bitrateIndexValue + 1;
+
+                        numBitrates = document.getElementById("num-audio-bitrates");
+                        numBitrates.innerHTML = numBitratesValue;
+
+                        bufferLength = document.getElementById("audio-buffer");
+                        if (bufferLengthValue > 0) {
+                            bufferLengthValue = bufferLengthValue.toPrecision(5);
+                        }
+                        bufferLength.innerHTML = bufferLengthValue + " seconds";
+
+
+                        fragDuration = document.getElementById("audio-frag-duration");
+                        fragDuration.innerHTML = lastFragmentDuration + " seconds";
+
+                        fragTime = document.getElementById("audio-frag-dl-time");
+                        fragTime.innerHTML = lastFragmentDownloadTime + " seconds";
+
+                        series = audioBufferChart.series[0];
+                        x = video.currentTime;
+                        y = Math.round(bufferLengthValue);
+                        series.addPoint([x, y], true, true, false);
+                    }
                 }
             }
         }
@@ -420,7 +510,7 @@
             var streams = {};
 
             streams.archive = "http://dash.edgesuite.net/dash264/TestCases/1b/thomson-networks/manifest.mpd";
-            streams.live = "http://dashdemo.edgesuite.net/mediaexcel/live/ch1/dash.mpd";
+            streams.live = "http://venus.mediaexcel.com/hera/videos/ch1/dash.mpd"; //"http://dashdemo.edgesuite.net/mediaexcel/live/ch1/dash.mpd";
             streams.netflix = "http://dashdemo.edgesuite.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd";
             streams.fraunhofer = "http://dashdemo.edgesuite.net/dash264/TestCases/3b/fraunhofer/elephants_dream_heaac2_0.mpd";
             streams.list = "http://www.digitalprimates.net/dash/streams/gpac/mp4-main-multi-mpd-AV-NBS.mpd";
@@ -430,7 +520,8 @@
             streams.youtube = "http://yt-dash-mse-test.commondatastorage.googleapis.com/car-20120827-manifest.mpd";
             streams.bunny = "http://dash.edgesuite.net/adobe/bbb/bbb.mpd";
             streams.envivio = "http://dashdemo.edgesuite.net/envivio/dashpr/clear/Manifest.mpd";
-            streams.custom = "http://64.105.129.38/manifest.txt";
+            //streams.custom = "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvtime.mpd?wowzasessionid=12348";
+            streams.custom = "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvtime.mpd?wowzasessionid=12347";
 
             var custom = document.getElementById("custom-source"),
                 select = document.getElementById("sources"),
@@ -444,10 +535,12 @@
 
 			var video = document.querySelector(".dash-video-player video"),
 				context = new Dash.di.DashContext(),
-				player = new MediaPlayer(context),
 				console = document.getElementById("debug_log"),
 				debug;
 
+			player = new MediaPlayer(context);
+
+            video.addEventListener("timeupdate", onProgress);
 			player.startup();
 
 			debug = player.debug;

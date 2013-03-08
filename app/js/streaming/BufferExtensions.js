@@ -22,17 +22,20 @@ MediaPlayer.dependencies.BufferExtensions = function () {
 
     return {
         decideBufferLength: function (minBufferTime) {
+            bufferTime = 4;
+            /*
             if (isNaN(minBufferTime) || minBufferTime <= 0) {
                 bufferTime = 4;
             } else {
                 bufferTime = minBufferTime;
             }
-            return (function () { return Q.when(bufferTime); }());
+            */
+            return Q.when(bufferTime);
         },
 
         shouldBufferMore: function (bufferLength) {
             var result = (bufferLength < bufferTime);
-            return (function () { return Q.when(result); }());
+            return Q.when(result);
         }
     };
 };

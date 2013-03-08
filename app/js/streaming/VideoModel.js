@@ -19,6 +19,7 @@ MediaPlayer.models.VideoModel = function () {
     "use strict";
 
     var element,
+        isLive = false,
         stalledStreams = [],
 
         isStalled = function () {
@@ -87,7 +88,7 @@ MediaPlayer.models.VideoModel = function () {
             return element.currentTime;
         },
 
-        setCurrentTime : function (currentTime) {
+        setCurrentTime: function (currentTime) {
             element.currentTime = currentTime;
         },
 
@@ -105,6 +106,14 @@ MediaPlayer.models.VideoModel = function () {
 
         setSource: function (source) {
             element.src = source;
+        },
+
+        getIsLive: function () {
+            return isLive;
+        },
+
+        setIsLive: function (value) {
+            isLive = value;
         },
 
         stallStream: stallStream,

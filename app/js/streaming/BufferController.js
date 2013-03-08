@@ -21,15 +21,16 @@ MediaPlayer.dependencies.BufferController = function () {
         STALL_THRESHOLD = 0.5,
         WAITING = "WAITING",
         READY = "READY",
-        READY_LIVE = "READY_LIVE",
         VALIDATING = "VALIDATING",
-        VALIDATING_LIVE = "VALIDATING_LIVE",
         LOADING = "LOADING",
         state = WAITING,
+        ready = false,
+        started = false,
         initialPlayback = true,
         seeking = false,
+        setSeek = false,
         seekTarget = -1,
-        setOffset = false,
+        blockProgramSeek = false,
         qualityChanged = false,
         lastQuality = -1,
         timer = null,
@@ -61,50 +62,100 @@ MediaPlayer.dependencies.BufferController = function () {
             }
         },
 
+        initializeLive = function () {
+            var self = this,
+                deferred = Q.defer(),
+                isLive = self.videoModel.getIsLive(),
+                quality = 0;
+
+            if (isLive) {
+                self.debug.log("Gathering information for live.");
+                self.indexHandler.getSegmentRequestForTime(0, quality, data).then(
+                    function (request) {
+                        self.debug.log("Got live request.");
+                        self.fragmentLoader.load(request).then(
+                            function (response) {
+                                self.debug.log("Live request loaded, parsing...");
+                                self.fragmentExt.parseSIDX(response.data).then(
+                                    function (sidx) {
+                                        liveOffset = sidx.earliestPresentationTime / sidx.timescale;
+                                        buffer.timestampOffset = -liveOffset;
+                                        self.debug.log("Got live offset: " + liveOffset);
+                                        deferred.resolve(isLive);
+                                    }
+                                );
+                            }
+                        );
+                    }
+                );
+            } else {
+                deferred.resolve(isLive);
+            }
+
+            return deferred.promise;
+        },
+
+        startPlayback = function () {
+            if (!ready || !started) {
+                return;
+            }
+
+            var self = this;
+
+            initializeLive.call(this).then(
+                function (isLive) {
+                    self.debug.log("BufferController begin validation.");
+                    state = READY;
+                    timer = setInterval(onTimer.bind(self), VALIDATE_DELAY, self);
+                }
+            );
+        },
+
         doStart = function () {
-            var currentTime = new Date();
+            var currentTime;
 
             if (timer !== null) {
                 return;
             }
 
             if (seeking === false) {
+                currentTime = new Date();
                 clearPlayListTraceMetrics(currentTime, MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
                 playListMetrics = this.metricsModel.addPlayList(type, currentTime, 0, MediaPlayer.vo.metrics.PlayList.INITIAL_PLAY_START_REASON);
             }
 
             this.debug.log("BufferController start.");
-            state = READY;
-            timer = setInterval(onTimer.bind(this), VALIDATE_DELAY, this);
-        },
 
-        doLiveStart = function () {
-            if (timer !== null) {
-                return;
-            }
-
-            this.debug.log("BufferController live start.");
-            state = READY_LIVE;
-            timer = setInterval(onTimer.bind(this), VALIDATE_DELAY, this);
+            started = true;
+            startPlayback.call(this);
         },
 
         doSeek = function (time) {
-            var currentTime = new Date();
+            if (blockProgramSeek) {
+                blockProgramSeek = false;
+                return;
+            }
+
+            var currentTime;
 
             this.debug.log("BufferController seek.");
             seeking = true;
             seekTarget = time;
 
-            if (liveOffset >= 0) {
+            // Only programatically seek if not from an event? TODO
+            setSeek = true; //(this.videoModel.getCurrentTime() !== time);
+
+            // This time is probably from the scrub bar, which is relative to the video start.
+            // We need a time relative to the manifest start.
+            if (liveOffset !== -1) {
                 seekTarget -= liveOffset;
             }
 
-            if (timer === null) {
-                doLiveStart.call(this);
-            }
-
+            currentTime = new Date();
             clearPlayListTraceMetrics(currentTime, MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
             playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
+
+            doStart.call(this);
         },
 
         doStop = function () {
@@ -124,14 +175,23 @@ MediaPlayer.dependencies.BufferController = function () {
             return representation;
         },
 
+        finishValidation = function () {
+            if (state === LOADING) {
+                if (stalled) {
+                    stalled = false;
+                    this.videoModel.stallStream(type, stalled);
+                }
+                state = READY;
+            }
+        },
+
         onBytesLoaded = function (response) {
             var self = this,
-                promise = null;
+                time = 0;
 
             self.debug.log("Bytes finished loading.");
 
-            promise = self.fragmentController.process(response.data);
-            promise.then(
+            self.fragmentController.process(response.data).then(
                 function (data) {
                     if (data !== null) {
                         var representation = getRepresentationForQuality(lastQuality, self.getData()),
@@ -142,42 +202,40 @@ MediaPlayer.dependencies.BufferController = function () {
 
                         if (playListTraceMetricsClosed === true && state !== WAITING && lastQuality !== -1) {
                             playListTraceMetricsClosed = false;
-
                             playListTraceMetrics = self.metricsModel.appendPlayListTrace(playListMetrics, representation.id, null, currentTime, currentVideoTime, null, 1.0, null);
                         }
 
-                        self.sourceBufferExt.append(buffer, data).then(
+                        self.sourceBufferExt.append(buffer, data, self.videoModel).then(
                             function (appended) {
-                                if (appended === false) {
-                                    return;
-                                }
+                                self.debug.log("Append complete: " + buffer.buffered.length);
+                                if (buffer.buffered.length > 0) {
+                                    if (setSeek) {
+                                        if (seekTarget !== -1) {
+                                            time = seekTarget;
+                                        }
 
-                                if (liveOffset >= 0 && setOffset === true) {
-                                    setOffset = false;
-                                    if (seekTarget === -1) {
-                                        seekTarget = 0;
+                                        self.debug.log("Seeking to time: " + time);
+                                        blockProgramSeek = true;
+                                        self.videoModel.setCurrentTime(time);
+
+                                        setSeek = false;
+                                        seekTarget = -1;
+
+                                    } else {
+                                        seekTarget = -1;
                                     }
-                                    self.videoModel.setCurrentTime(seekTarget + liveOffset);
                                 }
+                                finishValidation.call(self);
                             }
                         );
                     } else {
                         self.debug.log("No bytes to push.");
-                    }
-
-                    if (state === LOADING) {
-                        if (stalled) {
-                            stalled = false;
-                            self.videoModel.stallStream(type, stalled);
-                        }
-                        state = READY;
+                        finishValidation.call(self);
                     }
 
                     data = null;
                 }
             );
-
-            promise = null;
         },
 
         onBytesError = function (error) {
@@ -198,10 +256,13 @@ MediaPlayer.dependencies.BufferController = function () {
 
             if (initialPlayback) {
                 this.debug.log("Marking a special seek for initial playback.");
-                seeking = true;
-                if (seekTarget >= -1) {
-                    seekTarget = this.videoModel.getCurrentTime();
+
+                // If we weren't already seeking, 'seek' to the beginning of the stream.
+                if (!seeking) {
+                    seeking = true;
+                    seekTarget = 0;
                 }
+
                 initialPlayback = false;
             }
 
@@ -220,7 +281,6 @@ MediaPlayer.dependencies.BufferController = function () {
                 this.debug.log("Loading the fragment for time: " + seekTarget);
                 promise = this.indexHandler.getSegmentRequestForTime(seekTarget, quality, data);
                 seeking = false;
-                seekTarget = -1;
             } else {
                 this.debug.log("Loading the next fragment.");
                 promise = this.indexHandler.getNextSegmentRequest(quality, data);
@@ -233,70 +293,57 @@ MediaPlayer.dependencies.BufferController = function () {
             var self = this,
                 newQuality,
                 representation = null,
-                currentTime = new Date(),
+                now = new Date(),
                 segmentRequest,
-                currentVideoTime = self.videoModel.getCurrentTime();
+                currentVideoTime = self.videoModel.getCurrentTime(),
+                currentTime;
 
-            self.debug.log("BufferController.validate() | state: " + state);
+            if (seekTarget === -1) {
+                currentTime = currentVideoTime;
+            } else {
+                currentTime = seekTarget;
+            }
 
-            self.sourceBufferExt.getBufferLength(buffer, self.videoModel.getCurrentTime()).then(
+            //self.debug.log("BufferController.validate() | state: " + state);
+
+            self.sourceBufferExt.getBufferLength(buffer, currentTime).then(
                 function (length) {
-                    self.debug.log("Current " + type + " buffer length: " + length);
+                    //self.debug.log("Current " + type + " buffer length: " + length);
                     if (state === LOADING && length < STALL_THRESHOLD) {
                         if (!stalled) {
                             self.debug.log("Stalling Buffer: " + type);
+                            clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REBUFFERING_REASON);
                             stalled = true;
                             self.videoModel.stallStream(type, stalled);
                             return Q.when(false);
                         }
-                    } else if (state === READY_LIVE) {
-                        state = VALIDATING_LIVE;
-
-                        segmentRequest = null;
-
-                        self.abrController.getPlaybackQuality(data).then(
-                            function (quality) {
-                                return self.indexHandler.getSegmentRequestForTime(0, quality, data);
-                            }
-                        ).then(
-                            function (request) {
-                                segmentRequest = request;
-                                return self.fragmentLoader.load(request);
-                            }
-                        ).then(
-                            function (request) {
-                                return self.fragmentExt.parseTFDT(request.data);
-                            }
-                        ).then(
-                            function (tfdt) {
-                                liveOffset = tfdt.base_media_decode_time;
-                                liveOffset = liveOffset / segmentRequest.timescale;
-
-                                if (state === VALIDATING_LIVE) {
-                                    state = READY;
-                                    setOffset = true;
-                                }
-                            }
-                        );
                     } else if (state === READY) {
                         state = VALIDATING;
                         self.metricsModel.addBufferLevel(type, new Date(), length);
                         self.bufferExt.shouldBufferMore(length).then(
                             function (shouldBuffer) {
-                                self.debug.log("Deciding to buffer more: " + shouldBuffer);
+                                //self.debug.log("Deciding to buffer more: " + shouldBuffer);
                                 if (shouldBuffer) {
-                                    self.abrController.getPlaybackQuality(data).then(
+                                    self.abrController.getPlaybackQuality(type, data).then(
                                         function (quality) {
                                             self.debug.log("Playback quality: " + quality);
                                             self.debug.log("Populate buffers.");
 
-                                            newQuality = quality;
+                                            if (quality !== undefined) {
+                                                newQuality = quality;
+                                            }
+
                                             qualityChanged = (quality !== lastQuality);
 
                                             if (qualityChanged === true) {
                                                     representation = getRepresentationForQuality(newQuality, self.getData());
+
+                                                    if (representation === null || representation === undefined) {
+                                                        throw "Unexpected error!";
+                                                    }
+
                                                     clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
-                                                    self.metricsModel.addRepresentationSwitch(type, currentTime, currentVideoTime, representation.id);
+                                                    self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, representation.id);
                                             }
 
                                             self.debug.log(qualityChanged ? ("Quality changed to: " + quality) : "Quality didn't change.");
@@ -384,6 +431,9 @@ MediaPlayer.dependencies.BufferController = function () {
             );
 
             self.indexHandler.setType(self.type);
+
+            ready = true;
+            startPlayback.call(this);
         },
 
         getType: function () {

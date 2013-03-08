@@ -1,4 +1,4 @@
-﻿/*
+/*
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,24 @@
  * author Digital Primates
  * copyright dash-if 2012
  */
-MediaPlayer.utils.Debug = function () {
+MediaPlayer.rules.SwitchRequest = function (q, p) {
     "use strict";
+    this.quality = q;
+    this.priority = p;
 
-    var htmlConsole = null;
+    if (this.quality === undefined) {
+        this.quality = 999;
+    }
 
-    return {
-        init: function (hc) {
-            htmlConsole = $(hc);
-        },
+    if (this.priority === undefined) {
+        this.priority = 0.5;
+    }
+};
 
-        log: function (message) {
-            console.log(message);
-
-            if (htmlConsole !== null) {
-                var output = message + "</br>";
-                htmlConsole.prepend(output);
-            }
-        }
-    };
+MediaPlayer.rules.SwitchRequest.prototype = {
+    constructor: MediaPlayer.rules.SwitchRequest,
+    NO_CHANGE: 999,
+    DEFAULT: 0.5,
+    STRONG: 1,
+    WEAK: 0
 };

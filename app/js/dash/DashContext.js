@@ -28,6 +28,7 @@ Dash.di.DashContext = function () {
             this.system.mapClass('baseURLExt', Dash.dependencies.BaseURLExtensions);
             this.system.mapClass('fragmentExt', Dash.dependencies.FragmentExtensions);
             this.system.mapSingleton('manifestExt', Dash.dependencies.DashManifestExtensions);
+            this.system.mapSingleton('metricsExt', Dash.dependencies.DashMetricsExtensions);
         }
     };
 };

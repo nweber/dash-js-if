@@ -24,6 +24,9 @@ MediaPlayer.dependencies.Stream = function () {
         audioController = null,
         autoPlay = true,
         initialized = false,
+        ready = false,
+        loaded = false,
+        urlSource,
 
         play = function () {
             this.debug.log("Attempting play...");
@@ -163,6 +166,8 @@ MediaPlayer.dependencies.Stream = function () {
                                                     videoController.setMinBufferTime(minBufferTime);
 
                                                     self.debug.log("Video is ready!");
+
+                                                    self.bufferControllerUpdater.addBufferController(videoController, 'video');
                                                 }
 
                                                 videoReady = true;
@@ -215,6 +220,7 @@ MediaPlayer.dependencies.Stream = function () {
                                                             audioController.setBuffer(buffer);
                                                             audioController.setMinBufferTime(minBufferTime);
                                                             self.debug.log("Audio is ready!");
+                                                            self.bufferControllerUpdater.addBufferController(audioController, 'audio');
                                                         }
 
                                                         audioReady = true;
@@ -305,7 +311,78 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onProgress = function (e) {
-            this.debug.log("Got timeupdate event.");
+            //this.debug.log("Got timeupdate event.");
+        },
+
+        doLoad = function () {
+            if (!ready || !loaded) {
+                return;
+            }
+
+            var self = this,
+                url = urlSource;
+
+            self.debug.log("Stream start loading.");
+
+            self.manifestLoader.load(url).then(
+                function (manifestResult) {
+                    manifest = manifestResult;
+                    self.system.mapValue("manifest", manifest);
+                    self.metricsExt.setManifest(manifest);
+                    self.debug.log("Manifest has loaded.");
+                    self.debug.log(manifest);
+                    return self.manifestUpdater.registerForUpdates(url, manifest);
+                }
+            ).then(
+                function (registeredForUpdates) {
+                    return self.mediaSourceExt.createMediaSource();
+                }
+            ).then(
+                function (mediaSourceResult) {
+                    mediaSource = mediaSourceResult;
+                    self.debug.log("MediaSource created.");
+                    return setUpMediaSource.call(self);
+                }
+            ).then(
+                function (result) {
+                    self.debug.log("MediaSource set up.");
+                    return initializeMediaSource.call(self);
+                }
+            ).then(
+                function (result) {
+                    self.debug.log("Start initializing playback.");
+                    return initializePlayback.call(self);
+                }
+            ).then(
+                function (done) {
+                    self.debug.log("Playback initialized!");
+                    self.manifestExt.getIsLive(manifest).then(
+                        function (isLive) {
+                            if (isLive) {
+                                self.manifestExt.getLiveOffset(manifest).then(
+                                    function (delay) {
+                                        var now = new Date(),
+                                            start = manifest.availabilityStartTime,
+                                            liveOffset = ((now.getTime() - start.getTime()) / 1000) - delay;
+
+                                        if (liveOffset < 0) {
+                                            liveOffset = 0;
+                                        }
+
+                                        self.debug.log("Got live content.  Starting playback at offset: " + liveOffset);
+                                        self.videoModel.setIsLive(true);
+                                        seek.call(self, liveOffset);
+                                    }
+                                );
+                            } else {
+                                self.debug.log("Got VOD content.  Starting playback.");
+                                self.videoModel.setIsLive(false);
+                                play.call(self);
+                            }
+                        }
+                    );
+                }
+            );
         };
 
     return {
@@ -321,12 +398,23 @@ MediaPlayer.dependencies.Stream = function () {
         fragmentExt: undefined,
         capabilities: undefined,
         debug: undefined,
+        metricsExt: undefined,
+        manifestUpdater: undefined,
+        bufferControllerUpdater: undefined,
 
         setup: function () {
             this.videoModel.listen("play", onPlay.bind(this));
             this.videoModel.listen("pause", onPause.bind(this));
             this.videoModel.listen("seeking", onSeeking.bind(this));
             this.videoModel.listen("timeupdate", onProgress.bind(this));
+
+            ready = true;
+            doLoad.call(this);
+        },
+
+        getManifestExt: function () {
+            var self = this;
+            return self.manifestExt;
         },
 
         setAutoPlay: function (value) {
@@ -385,54 +473,9 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         load: function (url) {
-            var self = this;
-
-            self.debug.log("Stream start loading.");
-
-            self.manifestLoader.load(url).then(
-                function (manifestResult) {
-                    manifest = manifestResult;
-                    self.system.mapValue("manifest", manifest);
-                    self.debug.log("Manifest has loaded.");
-                    self.debug.log(manifest);
-                    return self.mediaSourceExt.createMediaSource();
-                }
-            ).then(
-                function (mediaSourceResult) {
-                    mediaSource = mediaSourceResult;
-                    self.debug.log("MediaSource created.");
-                    return setUpMediaSource.call(self);
-                }
-            ).then(
-                function (result) {
-                    self.debug.log("MediaSource set up.");
-                    return initializeMediaSource.call(self);
-                }
-            ).then(
-                function (result) {
-                    self.debug.log("Start initializing playback.");
-                    return initializePlayback.call(self);
-                }
-            ).then(
-                function (done) {
-                    self.debug.log("Playback initialized!");
-                    self.manifestExt.getIsLive(manifest).then(
-                        function (isLive) {
-                            if (isLive) {
-                                //fragmentExt.loadFragment(url)
-                                var now = new Date(),
-                                    start = manifest.availabilityStartTime,
-                                    liveOffset = (now.getTime() - start.getTime()) / 1000;
-                                self.debug.log("Got live content.  Starting playback at offset: " + liveOffset);
-                                seek.call(self, liveOffset);
-                            } else {
-                                self.debug.log("Got VOD content.  Starting playback.");
-                                play.call(self);
-                            }
-                        }
-                    );
-                }
-            );
+            urlSource = url;
+            loaded = true;
+            doLoad.call(this);
         },
 
         play: play,

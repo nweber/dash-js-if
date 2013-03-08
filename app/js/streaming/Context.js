@@ -35,7 +35,11 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('bufferExt', MediaPlayer.dependencies.BufferExtensions);
 
             this.system.mapSingleton('abrController', MediaPlayer.dependencies.AbrController);
-            this.system.mapClass('bandwidthRule', MediaPlayer.rules.BandwidthRule);
+            this.system.mapSingleton('bufferControllerUpdater', MediaPlayer.dependencies.BufferControllerUpdater);
+            this.system.mapSingleton('manifestUpdater', MediaPlayer.dependencies.ManifestUpdater);
+            this.system.mapClass('downloadRatioRule', MediaPlayer.rules.DownloadRatioRule);
+            this.system.mapClass('insufficientBufferRule', MediaPlayer.rules.InsufficientBufferRule);
+            this.system.mapClass('limitSwitchesRule', MediaPlayer.rules.LimitSwitchesRule);
             this.system.mapClass('abrRulesCollection', MediaPlayer.rules.BaseRulesCollection);
 
             this.system.mapClass('bufferController', MediaPlayer.dependencies.BufferController);
