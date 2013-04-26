@@ -94,6 +94,7 @@ MediaPlayer.dependencies.AbrController = function () {
             self.debug.log("ABR enabled? (" + autoSwitchBitrate + ")");
 
             if (autoSwitchBitrate) {
+                console.log("Check ABR rules.");
                 self.debug.log("Check ABR rules.");
 
                 self.getMetricsFor(data).then(
@@ -158,6 +159,7 @@ MediaPlayer.dependencies.AbrController = function () {
                     }
                 );
             } else {
+                console.log("Unchanged quality of " + quality);
                 self.debug.log("Unchanged quality of " + quality);
                 deferred.resolve(quality);
             }

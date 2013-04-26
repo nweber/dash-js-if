@@ -73,7 +73,7 @@ MediaPlayer.models.VideoModel = function () {
         system : undefined,
 
         setup : function () {
-            this.system.mapHandler("setCurrentTime", undefined, handleSetCurrentTimeNotification.bind(this));
+            //this.system.mapHandler("setCurrentTime", undefined, handleSetCurrentTimeNotification.bind(this));
         },
 
         play: function () {
@@ -101,7 +101,8 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setCurrentTime: function (currentTime) {
-            _currentTime = currentTime;
+            //_currentTime = currentTime;
+            element.currentTime = currentTime;
         },
 
         listen: function (type, callback) {
@@ -126,6 +127,14 @@ MediaPlayer.models.VideoModel = function () {
 
         setIsLive: function (value) {
             isLive = value;
+        },
+
+        addKey: function (type, key, data, id) {
+            element.webkitAddKey(type, key, data, id);
+        },
+
+        generateKeyRequest: function(type, data) {
+            element.webkitGenerateKeyRequest(type, data);
         },
 
         stallStream: stallStream,

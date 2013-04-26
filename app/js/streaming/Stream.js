@@ -30,6 +30,8 @@ MediaPlayer.dependencies.Stream = function () {
         loaded = false,
         urlSource,
         errored = false,
+        programSeek = false,
+        DEFAULT_KEY_TYPE = "webkit-org.w3.clearkey",
 
         play = function () {
             this.debug.log("Attempting play...");
@@ -64,6 +66,35 @@ MediaPlayer.dependencies.Stream = function () {
             }
         },
 
+        // Encrypted Media Extensions
+
+        onMediaSourceNeedsKey = function (event) {
+            this.debug.log("DRM: Key required.");
+            this.debug.log("DRM: Generating key request...");
+            this.videoModel.generateKeyRequest(DEFAULT_KEY_TYPE, event.initData);
+        },
+
+        onMediaSourceKeyMessage = function (event) {
+            this.debug.log("DRM: Got a key message...");
+            this.debug.log("DRM: Key system = " + event.keySystem);
+            if (event.keySystem === DEFAULT_KEY_TYPE) {
+                // todo : request license?
+                //requestLicense(e.message, e.sessionId, this);
+            } else {
+                this.debug.log("DRM: Key type not supported!");
+            }
+        },
+
+        onMediaSourceKeyAdded = function (event) {
+            this.debug.log("DRM: Key added.");
+        },
+
+        addKey = function (key, data, id) {
+            this.videoModel.addKey(DEFAULT_KEY_TYPE, key, data, id);
+        },
+
+        // Media Source
+
         setUpMediaSource = function () {
             var deferred = Q.defer(),
                 self = this,
@@ -79,21 +110,21 @@ MediaPlayer.dependencies.Stream = function () {
                     }
 
                     switch (code) {
-                    case 1:
-                        msg = "MEDIA_ERR_ABORTED";
-                        break;
-                    case 2:
-                        msg = "MEDIA_ERR_NETWORK";
-                        break;
-                    case 3:
-                        msg = "MEDIA_ERR_DECODE";
-                        break;
-                    case 4:
-                        msg = "MEDIA_ERR_SRC_NOT_SUPPORTED";
-                        break;
-                    case 5:
-                        msg = "MEDIA_ERR_ENCRYPTED";
-                        break;
+                        case 1:
+                            msg = "MEDIA_ERR_ABORTED";
+                            break;
+                        case 2:
+                            msg = "MEDIA_ERR_NETWORK";
+                            break;
+                        case 3:
+                            msg = "MEDIA_ERR_DECODE";
+                            break;
+                        case 4:
+                            msg = "MEDIA_ERR_SRC_NOT_SUPPORTED";
+                            break;
+                        case 5:
+                            msg = "MEDIA_ERR_ENCRYPTED";
+                            break;
                     }
 
                     errored = true;
@@ -116,7 +147,7 @@ MediaPlayer.dependencies.Stream = function () {
                     deferred.resolve(mediaSource);
                 };
 
-            this.debug.log("MediaSource should be closed. (" + mediaSource.readyState + ")");
+            self.debug.log("MediaSource should be closed. (" + mediaSource.readyState + ")");
 
             mediaSource.addEventListener("sourceclose", onMediaSourceClose, false);
             mediaSource.addEventListener("webkitsourceclose", onMediaSourceClose, false);
@@ -124,8 +155,12 @@ MediaPlayer.dependencies.Stream = function () {
             mediaSource.addEventListener("sourceopen", onMediaSourceOpen, false);
             mediaSource.addEventListener("webkitsourceopen", onMediaSourceOpen, false);
 
-            this.mediaSourceExt.attachMediaSource(mediaSource, this.videoModel);
-            this.debug.log("MediaSource attached to video.  Waiting on open...");
+            mediaSource.addEventListener("webkitneedkey", onMediaSourceNeedsKey.bind(self), false);
+            mediaSource.addEventListener("webkitkeymessage", onMediaSourceKeyMessage.bind(self), false);
+            mediaSource.addEventListener("webkitkeyadded", onMediaSourceKeyAdded.bind(self), false);
+
+            self.mediaSourceExt.attachMediaSource(mediaSource, self.videoModel);
+            self.debug.log("MediaSource attached to video.  Waiting on open...");
 
             return deferred.promise;
         },
@@ -296,7 +331,6 @@ MediaPlayer.dependencies.Stream = function () {
                                                     audioController.setBuffer(buffer);
                                                     audioController.setMinBufferTime(minBufferTime);
                                                     self.debug.log("Audio is ready!");
-                                                    //self.bufferControllerUpdater.addBufferController(audioController, 'audio'); TODO
                                                 }
 
                                                 audioReady = true;
@@ -375,6 +409,12 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onSeeking = function (e) {
+            // if the seek was caused programatically, bail now
+            if (programSeek) {
+                programSeek = false;
+                return;
+            }
+
             this.debug.log("Got seeking event.");
 
             if (videoController) {
@@ -443,6 +483,10 @@ MediaPlayer.dependencies.Stream = function () {
             );
         },
 
+        currentTimeChanged = function () {
+            programSeek = true;
+        },
+
         manifestHasUpdated = function () {
             var self = this,
                 videoData,
@@ -504,10 +548,12 @@ MediaPlayer.dependencies.Stream = function () {
         capabilities: undefined,
         debug: undefined,
         metricsExt: undefined,
-        bufferControllerUpdater: undefined,
         errHandler: undefined,
 
         setup: function () {
+            this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
+            this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
+
             this.videoModel.listen("play", onPlay.bind(this));
             this.videoModel.listen("pause", onPause.bind(this));
             this.videoModel.listen("seeking", onSeeking.bind(this));
@@ -537,6 +583,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         manifestHasUpdated: manifestHasUpdated,
+        currentTimeChanged: currentTimeChanged,
 
         reset: function () {
             pause.call(this);

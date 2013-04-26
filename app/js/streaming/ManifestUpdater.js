@@ -59,6 +59,7 @@ MediaPlayer.dependencies.ManifestUpdater = function () {
         self.debug.log("Refresh manifest.");
         self.manifestLoader.load(manifest.mpdUrl).then(
             function (manifestResult) {
+                console.log("REFRESH!");
                 self.debug.log("Manifest has been updated.");
                 self.manifestModel.setValue(manifestResult);
                 self.debug.log("Manifest has been refreshed.");

@@ -48,7 +48,6 @@ MediaPlayer.di.Context = function () {
             this.system.mapClass('fragmentController', MediaPlayer.dependencies.FragmentController);
             this.system.mapClass('fragmentLoader', MediaPlayer.dependencies.FragmentLoader);
             this.system.mapClass('stream', MediaPlayer.dependencies.Stream);
-            this.system.mapHandler('manifestUpdated', 'stream', 'manifestHasUpdated');
         }
     };
 };

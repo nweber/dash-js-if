@@ -199,7 +199,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getAudioDatas: function (manifest) {
         "use strict";
-        //return Q.when(null);
+        return Q.when(null);
         //------------------------------------
         var self = this,
             adaptations = manifest.Period_asArray[0].AdaptationSet_asArray,
@@ -283,6 +283,53 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(delay);
     },
 
+    getLiveStart: function (manifest) {
+        var time = 0,
+            fStart = 1,
+            fDuration,
+            fTimescale = 1;
+
+        // We don't really care what representation we use; they should all start at the same time.
+        // Just grab the first representation; if this isn't there, we have bigger problems.
+        representation = manifest.Period_asArray[0].AdaptationSet_asArray[1].Representation_asArray[0];
+
+        if (representation.hasOwnProperty("SegmentList")) {
+            list = representation.SegmentList;
+
+            if (list.hasOwnProperty("startNumber")) {
+                fStart = Math.max(list.startNumber, 1);
+            }
+            if (list.hasOwnProperty("timescale")) {
+                fTimescale = list.timescale;
+            }
+            fDuration = list.duration;
+
+            time = (((fStart - 1) * fDuration) / fTimescale);
+        }
+        else if (representation.hasOwnProperty("SegmentTemplate")) {
+            template = representation.SegmentTemplate;
+
+            if (template.hasOwnProperty("startNumber")) {
+                fStart = Math.max(template.startNumber, 1);
+            }
+            if (template.hasOwnProperty("timescale")) {
+                fTimescale = template.timescale;
+            }
+            fDuration = template.duration;
+
+            if (template.hasOwnProperty("SegmentTimeline")) {
+                // This had better exist, or there's bigger problems.
+                // First one must have a time value!
+                time = (template.SegmentTimeline.S_asArray[0].t / fTimescale);
+            }
+            else {
+                time = (((fStart - 1) * fDuration) / fTimescale);
+            }
+        }
+
+        return Q.when(time);
+    },
+
     getLiveEdge: function (manifest) {
         "use strict";
         var self = this,
@@ -290,10 +337,16 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             liveOffset = 0,
             now = new Date(),
             start = manifest.availabilityStartTime,
-            end;
+            end,
+            representation,
+            list,
+            template,
+            timeline;
 
         self.getLiveOffset(manifest).then(
             function (delay) {
+                // Figure out the time between now and available start time.
+
                 if (manifest.hasOwnProperty("availabilityEndTime")) {
                     end = manifest.availabilityEndTime;
                     liveOffset = ((end.getTime() - start.getTime()) / 1000);
@@ -301,16 +354,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                     liveOffset = ((now.getTime() - start.getTime()) / 1000);
                 }
 
-                liveOffset -= delay;
+                // Find out the between stream start and available start time.
+                self.getLiveStart(manifest).then(
+                    function (start) {
+                        // get the full time, relative to stream start
+                        liveOffset += start;
 
-                // Be sure the delay doesn't push us out of range.
-                if (liveOffset < 0) {
-                    liveOffset = 0;
-                }
+                        // peel off our reserved time
+                        console.log("delay " + delay);
+                        liveOffset -= delay;
 
-                liveOffset = Math.floor(liveOffset);
-
-                deferred.resolve(liveOffset);
+                        deferred.resolve(liveOffset);
+                    }
+                );
             }
         );
 
