@@ -57,7 +57,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             bufferLength = ranges.end(rangeIndex) - time;
         }
 
-        return (function () { return Q.when(bufferLength); }());
+        return Q.when(bufferLength);
     },
 
     append: function (buffer, bytes, videoModel) {

@@ -30,8 +30,13 @@ MediaPlayer.dependencies.Stream = function () {
         loaded = false,
         urlSource,
         errored = false,
-        programSeek = false,
         DEFAULT_KEY_TYPE = "webkit-org.w3.clearkey",
+
+        playListener,
+        pauseListener,
+        seekingListener,
+        seekedListener,
+        timeupdateListener,
 
         play = function () {
             this.debug.log("Attempting play...");
@@ -409,12 +414,6 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onSeeking = function (e) {
-            // if the seek was caused programatically, bail now
-            if (programSeek) {
-                programSeek = false;
-                return;
-            }
-
             this.debug.log("Got seeking event.");
 
             if (videoController) {
@@ -423,6 +422,12 @@ MediaPlayer.dependencies.Stream = function () {
             if (audioController) {
                 audioController.seek(this.videoModel.getCurrentTime());
             }
+        },
+
+        onSeeked = function (e) {
+            this.debug.log("Seek complete.");
+            this.videoModel.listen("seeking", seekingListener);
+            this.videoModel.unlisten("seeked", seekedListener);
         },
 
         onProgress = function (e) {
@@ -484,7 +489,10 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         currentTimeChanged = function () {
-            programSeek = true;
+            this.debug.log("Current time has changed, block programmatic seek.");
+
+            this.videoModel.unlisten("seeking", seekingListener);
+            this.videoModel.listen("seeked", seekedListener);
         },
 
         manifestHasUpdated = function () {
@@ -554,10 +562,16 @@ MediaPlayer.dependencies.Stream = function () {
             this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
             this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
 
-            this.videoModel.listen("play", onPlay.bind(this));
-            this.videoModel.listen("pause", onPause.bind(this));
-            this.videoModel.listen("seeking", onSeeking.bind(this));
-            this.videoModel.listen("timeupdate", onProgress.bind(this));
+            playListener = onPlay.bind(this);
+            pauseListener = onPause.bind(this);
+            seekingListener = onSeeking.bind(this);
+            seekedListener = onSeeked.bind(this);
+            timeupdateListener = onProgress.bind(this);
+
+            this.videoModel.listen("play", playListener);
+            this.videoModel.listen("pause", pauseListener);
+            this.videoModel.listen("seeking", seekingListener);
+            this.videoModel.listen("timeupdate", timeupdateListener);
 
             ready = true;
             doLoad.call(this);
@@ -581,9 +595,6 @@ MediaPlayer.dependencies.Stream = function () {
             loaded = true;
             doLoad.call(this);
         },
-
-        manifestHasUpdated: manifestHasUpdated,
-        currentTimeChanged: currentTimeChanged,
 
         reset: function () {
             pause.call(this);

@@ -96,11 +96,6 @@ MediaPlayer.utils.Debug = function () {
                 var trace = "<dt>" + message + "</dt>";
                 htmlConsole.prepend(trace);
                 filterLatest();
-/*
-                if (filter !== "") {
-                    updateFilter();
-                }
-*/
             }
         }
     };

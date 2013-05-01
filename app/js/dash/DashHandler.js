@@ -289,23 +289,26 @@ Dash.dependencies.DashHandler = function () {
             var idx = -1,
                 frag,
                 ft,
+                fd,
                 i,
                 len;
-
-console.log("------------");
-console.log(time);
-console.log(segments);
-console.log("------------");
 
             if (segments && segments.length > 0) {
                 for (i = segments.length - 1; i >= 0; i--) {
                     frag = segments[i];
                     ft = frag.startTime / frag.timescale;
-                    if (time >= ft) {
+                    fd = frag.duration / frag.timescale;
+                    if (time >= ft && time <= (ft + fd)) {
                         idx = i;
                         break;
                     }
                 }
+            }
+
+            if (idx === -1) {
+                console.log("Couldn't figure out a time!");
+                console.log("Time: " + time);
+                console.log(segments);
             }
 
             // TODO : This is horrible.
@@ -351,6 +354,8 @@ console.log("------------");
 
             dur = (fDuration / fTimescale);
             idx = Math.floor(time / dur);
+
+            idx += 1; // SegmentTemplate starts at 1, not zero, so apply that offset here.
 
             return Q.when(idx);
         },
@@ -416,7 +421,6 @@ console.log("------------");
                 usingTemplate = false,
                 self = this;
 
-            console.log("GET FOR TIME");
             self.debug.log("Getting the request for time: " + time);
 
             deferred = Q.defer();
@@ -436,7 +440,6 @@ console.log("------------");
                         self.debug.log("No segments found, so we must be using a SegmentTemplate.");
                         segmentsPromise = getIndexForTemplate.call(self, time, representation.SegmentTemplate);
                     } else {
-                        console.log("segments " + segments.length);
                         self.debug.log("Got a list of segments, so dig deeper.");
                         representation.segments = segments;
                         usingTemplate = false;
@@ -446,7 +449,6 @@ console.log("------------");
                 }
             ).then(
                 function (newIndex) {
-                    console.log("Index for time " + time + " is " + newIndex);
                     self.debug.log("Index for time " + time + " is " + newIndex);
                     index = newIndex;
 
@@ -492,7 +494,6 @@ console.log("------------");
                 segment,
                 self = this;
 
-            console.log("GET NEXT");
             self.debug.log("Getting the next request.");
 
             if (index === -1) {
@@ -516,9 +517,6 @@ console.log("------------");
                     } else {
                         getSegments.call(self, representation).then(
                             function (segments) {
-                                console.log("index " + index);
-                                if (segments) { console.log("segments " + segments.length); }
-
                                 var segmentsPromise;
 
                                 self.debug.log("Got segments.");
@@ -559,23 +557,28 @@ console.log("------------");
             var self,
                 representation = getRepresentationForQuality(quality, data),
                 time,
-                bufferedIndex = index,
+                bufferedIndex,
                 fs,
                 fd,
                 ft = 1,
                 deferred = Q.defer();
 
+            // get the last time again to be safe
+            bufferedIndex = index - 1;
+            if (bufferedIndex < 0) {
+                bufferedIndex = 0;
+            }
+
             getSegments.call(self, representation).then(
                 function (segments) {
                     // There's no segments so we *must* have a SegmentTemplate.
-                    console.log("GET TIME FOR INDEX " + index);
                     if (segments === null || segments === undefined) {
                         if (!representation.hasOwnProperty("SegmentTemplate")) {
                             throw "Expected SegmentTemplate!";
                         }
 
                         fd = representation.SegmentTemplate.duration;
-                        if (representation.SegmentTemplate.hasOwnProperty()) {
+                        if (representation.SegmentTemplate.hasOwnProperty("timescale")) {
                             ft = representation.SegmentTemplate.timescale;
                         }
 
@@ -587,14 +590,13 @@ console.log("------------");
 
                         fs = segments[bufferedIndex].startTime;
                         fd = segments[bufferedIndex].duration;
-                        if (segments[bufferedIndex].hasOwnProperty("timeline")) {
+                        if (segments[bufferedIndex].hasOwnProperty("timescale")) {
                             ft = segments[bufferedIndex].timescale;
                         }
 
                         time = (fs / ft); // + (fd / ft);
                     }
 
-                    console.log("Calculate time: " + time);
                     deferred.resolve(time);
                 }
             )

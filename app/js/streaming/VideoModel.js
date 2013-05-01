@@ -109,6 +109,10 @@ MediaPlayer.models.VideoModel = function () {
             element.addEventListener(type, callback, false);
         },
 
+        unlisten: function (type, callback) {
+            element.removeEventListener(type, callback, false);
+        },
+
         getElement: function () {
             return element;
         },

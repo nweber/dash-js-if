@@ -29,7 +29,7 @@ MediaPlayer.dependencies.BufferController = function () {
         waitingForBuffer = false,
         initialPlayback = true,
         seeking = false,
-        setSeek = false,
+        mseSetTime = false,
         seekTarget = -1,
         qualityChanged = false,
         dataChanged = true,
@@ -52,6 +52,10 @@ MediaPlayer.dependencies.BufferController = function () {
         playListTraceMetrics = null,
         playListTraceMetricsClosed = true,
 
+        setState = function (value) {
+            state = value;
+        },
+
         clearPlayListTraceMetrics = function (endTime, stopreason) {
             var duration = 0,
                 startTime = null;
@@ -67,105 +71,24 @@ MediaPlayer.dependencies.BufferController = function () {
             }
         },
 
+        // TODO : Remove?
         initializeLive = function () {
-            var self = this,
-                deferred = Q.defer(),
-                isLive = self.videoModel.getIsLive(),
-                quality = 0,
-                startTime = 0,
-                now;
-/*
-            if (isLive) {
-                self.debug.log("Gathering information for live.");
-                liveStartTime = self.manifestModel.getValue().availabilityStartTime;
+            var isLive = this.videoModel.getIsLive();
 
-                if (liveStartTime !== null && liveStartTime !== undefined) {
-                    now = new Date();
-                    startTime = Math.floor(((now.getTime() - liveStartTime.getTime()) / 1000));
-                }
-            }
-*/
-            liveInitialization = true; // TODO : REMOVE?
-            deferred.resolve(isLive); // TODO : REMOVE
-/*
-            if (isLive) {
-                self.debug.log("Gathering information for live.");
-                liveStartTime = self.manifestModel.getValue().availabilityStartTime;
+            liveInitialization = true;
 
-                if (liveStartTime !== null && liveStartTime !== undefined) {
-                    now = new Date();
-                    startTime = Math.floor(((now.getTime() - liveStartTime.getTime()) / 1000));
-                }
-*/
-/*
-                self.indexHandler.getInitRequest(quality, data).then(
-                    function (request) {
-                        self.debug.log("Got live init.");
-                        self.fragmentLoader.load(request).then(
-                            function (response) {
-                                self.debug.log("Live request loaded, parsing...");
-                                self.fragmentExt.parseSIDX(response.data).then(
-                                    function (sidx) {
-                                        self.indexHandler.getSegmentRequestForTime(startTime, quality, data).then(
-                                            function (request2) {
-                                                self.debug.log("Got live request.");
-                                                self.fragmentLoader.load(request2).then(
-                                                    function (response2) {
-                                                        self.debug.log("Live request loaded, parsing...");
-                                                        self.fragmentExt.parseTFDT(response2.data).then(
-                                                            function (tfdt) {
-                                                                liveOffset = tfdt.base_media_decode_time / sidx.timescale;
-                                                                buffer.timestampOffset = -liveOffset;
-                                                                self.debug.log("Got live offset: " + liveOffset);
-                                                                deferred.resolve(isLive);
-                                                            }
-                                                        );
-                                                    }
-                                                );
-                                            }
-                                        );
-                                    }
-                                );
-                            }
-                        );
-                    }
-                );
-*/
-/*
-                self.indexHandler.getSegmentRequestForTime(startTime, quality, data).then(
-                    function (request) {
-                        self.debug.log("Got live request.");
-                        self.fragmentLoader.load(request).then(
-                            function (response) {
-                                self.debug.log("Live request loaded, parsing...");
-                                self.fragmentExt.parseSIDX(response.data).then(
-                                    function (sidx) {
-                                        liveOffset = sidx.earliestPresentationTime / sidx.timescale;
-                                        //liveOffset = tfdt.base_media_decode_time / 30000;
-                                        buffer.timestampOffset = -liveOffset;
-                                        self.debug.log("Got live offset: " + liveOffset);
-                                        deferred.resolve(isLive);
-                                    }
-                                );
-                            }
-                        );
-                    }
-                );
-            } else {
-                deferred.resolve(isLive);
-            }
-*/
-
-            return deferred.promise;
+            return Q.when(isLive);
         },
 
-        setCurrentTimeForLiveStream = function (time) {
-            var self = this;
-            if (isLiveStream && liveInitialization) {
-                self.system.notify("setCurrentTime");
-                self.videoModel.setCurrentTime(time);
-                liveInitialization = false;
+        setCurrentTimeOnVideo = function (time) {
+            var ct = this.videoModel.getCurrentTime();
+            if (ct === time) {
+                return;
             }
+
+            this.debug.log("Set current time on video.");
+            this.system.notify("setCurrentTime");
+            this.videoModel.setCurrentTime(time);
         },
 
         startPlayback = function () {
@@ -179,7 +102,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 function (isLive) {
                     isLiveStream = isLive;
                     self.debug.log("BufferController begin validation.");
-                    state = READY;
+                    setState(READY);
                     timer = setInterval(onTimer.bind(self), VALIDATE_DELAY, self);
                 }
             );
@@ -202,21 +125,20 @@ MediaPlayer.dependencies.BufferController = function () {
 
             started = true;
             waitingForBuffer = true;
+            mseSetTime = true;
             startPlayback.call(this);
         },
 
         doSeek = function (time) {
             var currentTime;
 
-            this.debug.log("BufferController seek.");
+            this.debug.log("BufferController seek: " + time);
             seeking = true;
             seekTarget = time;
 
             if (liveOffset !== -1) {
                 seekTarget -= liveOffset;
             }
-
-            setSeek = true;
 
             currentTime = new Date();
             clearPlayListTraceMetrics(currentTime, MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
@@ -227,7 +149,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
         doStop = function () {
             this.debug.log("BufferController stop.");
-            state = WAITING;
+            setState(WAITING);
             clearInterval(timer);
             timer = null;
 
@@ -251,8 +173,7 @@ MediaPlayer.dependencies.BufferController = function () {
                     stalled = false;
                     this.videoModel.stallStream(type, stalled);
                 }
-                console.log("Set to ready.");
-                state = READY;
+                setState(READY);
             }
         },
 
@@ -280,41 +201,15 @@ MediaPlayer.dependencies.BufferController = function () {
                             function (appended) {
                                 self.debug.log("Append complete: " + buffer.buffered.length);
                                 if (buffer.buffered.length > 0) {
-                                    //---
-
                                     var ranges = buffer.buffered,
                                         i,
                                         len;
 
-                                    console.log("Number of buffered ranges: " + ranges.length);
+                                    self.debug.log("Buffer type: " + type);
+                                    self.debug.log("Number of buffered ranges: " + ranges.length);
                                     for (i = 0, len = ranges.length; i < len; i += 1) {
-                                        console.log("Buffered Range: " + ranges.start(i) + " - " + ranges.end(i));
+                                        self.debug.log("Buffered Range: " + ranges.start(i) + " - " + ranges.end(i));
                                     }
-
-                                    console.log("Finished append, set seek? " + setSeek);
-
-                                    //---
-
-                                    if (setSeek) {
-                                        if (seekTarget !== -1) {
-                                            time = seekTarget;
-                                        }
-
-                                        time = Math.ceil(ranges.start(0)); // TODO : Temporary fix!
-
-                                        self.debug.log("Seeking to time: " + time);
-
-                                        // If the stream is a live stream and the first time bytes have been appended,
-                                        // we need to update the current time of the video model...
-                                        console.log("SET TIME " + time);
-                                        setCurrentTimeForLiveStream.call(self, time);
-                                        //setCurrentTimeForLiveStream.call(self, time + liveOffset);
-
-                                        setSeek = false;
-                                        seekTarget = -1;
-                                    }
-
-                                    self.debug.log("Current time after append: " + self.videoModel.getCurrentTime());
                                 }
                                 finishValidation.call(self);
                             }
@@ -329,7 +224,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
         onBytesError = function (error) {
             if (state === LOADING) {
-                state = READY;
+                setState(READY);
             }
 
             //alert("Error loading fragment.");
@@ -370,7 +265,6 @@ MediaPlayer.dependencies.BufferController = function () {
 
             if (dataChanged && !seeking) {
                 //time = self.videoModel.getCurrentTime();
-                console.log("DATA CHANGED " + playingTime);
                 self.debug.log("Data changed - loading the fragment for time: " + playingTime);
                 promise = self.indexHandler.getSegmentRequestForTime(playingTime, quality, data);
             } else if (seeking) {
@@ -388,6 +282,81 @@ MediaPlayer.dependencies.BufferController = function () {
             return promise;
         },
 
+        checkIfSufficientBuffer = function (length) {
+            if (waitingForBuffer) {
+                if (length < minBufferTime) {
+                    if (!stalled) {
+                        this.debug.log("Waiting for more buffer before starting playback.");
+                        stalled = true;
+                        this.videoModel.stallStream(type, stalled);
+                    }
+                } else {
+                    this.debug.log("Got enough buffer to start.");
+                    waitingForBuffer = false;
+                    stalled = false;
+                    this.videoModel.stallStream(type, stalled);
+                }
+            }
+        },
+
+        mseGetDesiredTime = function () {
+            var ranges = buffer.buffered,
+                time = 0;
+
+            if (ranges.length > 0) {
+                // Ideally we'd be able to jump to the seekTarget.
+                // The seekTarget is relative to the manifest timeline though.
+                // There's no promise that the seekTarget and the timestamps of the media
+                // match, so we can't go to seekTarget.
+                // Instead jump to the first time in the buffered range.
+                time = ranges.start(0);
+                time += 0.01; // TODO : For some reason the streams don't play if we don't do this.
+            }
+
+            return time;
+        },
+
+        mseSetTimeIfPossible = function () {
+            if (waitingForBuffer || stalled) {
+                return;
+            }
+
+            if (!mseSetTime) {
+                return;
+            }
+
+            var ranges = buffer.buffered,
+                time;
+
+            if (ranges.length === 0) {
+                return;
+            }
+
+            time = mseGetDesiredTime();
+            this.debug.log("Set time to: " + time);
+            setCurrentTimeOnVideo.call(this, time);
+
+            liveInitialization = false;
+            mseSetTime = false;
+            seekTarget = -1;
+        },
+
+        getWorkingTime = function () {
+            var time = -1;
+
+            if (seeking) {
+                time = seekTarget;
+            }
+            else if (waitingForBuffer) {
+                time = mseGetDesiredTime();
+            }
+            else {
+                time = this.videoModel.getCurrentTime();
+            }
+
+            return time;
+        },
+
         validate = function () {
             var self = this,
                 newQuality,
@@ -395,51 +364,29 @@ MediaPlayer.dependencies.BufferController = function () {
                 now = new Date(),
                 segmentRequest,
                 currentVideoTime = self.videoModel.getCurrentTime(),
-                currentTime;
+                currentTime = getWorkingTime.call(self);
 
-            if (!seeking) {
-                currentTime = currentVideoTime;
-            } else {
-                currentTime = seekTarget;
-            }
-
-            //self.debug.log("BufferController.validate() | state: " + state);
-
-            console.log("State " + state);
+            self.debug.log("BufferController.validate() | state: " + state);
+            self.debug.log("Working time: " + currentTime);
+            self.debug.log("Video time: " + currentVideoTime);
 
             self.sourceBufferExt.getBufferLength(buffer, currentTime).then(
                 function (length) {
-                    console.log("Current " + type + " buffer length: " + length);
-                    console.log("Min Buffer Time " + minBufferTime);
-                    console.log("Video time: " + currentVideoTime);
-
                     self.debug.log("Current " + type + " buffer length: " + length);
-                    self.debug.log("Video time: " + currentVideoTime);
 
-                    if (waitingForBuffer) {
-                        if (length < minBufferTime) {
-                            if (!stalled) {
-                                self.debug.log("Waiting for more buffer before starting playback.");
-                                stalled = true;
-                                self.videoModel.stallStream(type, stalled);
-                            }
-                        } else {
-                            self.debug.log("Got enough buffer to start.");
-                            waitingForBuffer = false;
-                            stalled = false;
-                            self.videoModel.stallStream(type, stalled);
-                        }
-                    }
+                    checkIfSufficientBuffer.call(self, length);
+                    mseSetTimeIfPossible.call(self);
 
                     if (state === LOADING && length < STALL_THRESHOLD) {
                         if (!stalled) {
                             self.debug.log("Stalling Buffer: " + type);
                             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REBUFFERING_REASON);
                             stalled = true;
+                            waitingForBuffer = true;
                             self.videoModel.stallStream(type, stalled);
                         }
                     } else if (state === READY) {
-                        state = VALIDATING;
+                        setState(VALIDATING);
                         self.metricsModel.addBufferLevel(type, new Date(), length);
                         self.bufferExt.shouldBufferMore(length).then(
                             function (shouldBuffer) {
@@ -489,9 +436,8 @@ MediaPlayer.dependencies.BufferController = function () {
                                                         signalStreamComplete.call(self);
                                                         break;
                                                     case "download":
-                                                        console.log("Loading a segment: " + request.url);
                                                         self.debug.log("Loading a segment: " + request.url);
-                                                        state = LOADING;
+                                                        setState(LOADING);
                                                         self.fragmentLoader.load(request).then(onBytesLoaded.bind(self), onBytesError.bind(self));
                                                         break;
                                                     default:
@@ -504,13 +450,13 @@ MediaPlayer.dependencies.BufferController = function () {
                                             lastQuality = newQuality;
 
                                             if (state === VALIDATING) {
-                                                state = READY;
+                                                setState(READY);
                                             }
                                         }
                                     );
                                 } else {
                                     if (state === VALIDATING) {
-                                        state = READY;
+                                        setState(READY);
                                     }
                                 }
                             }

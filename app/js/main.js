@@ -338,9 +338,9 @@ function initStreamData() {
 
     streams.ipvidnetLive = {url: "http://dash-live-path1.edgesuite.net/dash/manifest.mpd", isLive: true};
     streams.uspLive = {url: "http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020", isLive: true};
-    streams.wowzaList = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvsegment.mpd?wowzasessionid=12346", isLive: true};
-    streams.wowzaTemplate = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvchunk.mpd?wowzasessionid=12347", isLive: true};
-    streams.wowzaTimeline = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvtime.mpd?wowzasessionid=12347", isLive: true};
+    streams.wowzaList = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvsegment.mpd", isLive: true};
+    streams.wowzaTemplate = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvchunk.mpd", isLive: true};
+    streams.wowzaTimeline = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvtime.mpd", isLive: true};
     streams.thomsonLive = {url: "http://tvnlive.dashdemo.edgesuite.net/live/manifest.mpd", isLive: true};
 
     streams.microsoft1 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_MP4_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)", isLive: false};

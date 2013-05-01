@@ -199,7 +199,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getAudioDatas: function (manifest) {
         "use strict";
-        return Q.when(null);
+        //return Q.when(null);
         //------------------------------------
         var self = this,
             adaptations = manifest.Period_asArray[0].AdaptationSet_asArray,
@@ -274,7 +274,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getLiveOffset: function (manifest) {
         "use strict";
-        var delay = 5;
+        var delay = 15;
 
         if (manifest.hasOwnProperty("suggestedPresentationDelay")) {
             delay = manifest.suggestedPresentationDelay;
@@ -361,7 +361,6 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                         liveOffset += start;
 
                         // peel off our reserved time
-                        console.log("delay " + delay);
                         liveOffset -= delay;
 
                         deferred.resolve(liveOffset);
