@@ -346,12 +346,15 @@ MediaPlayer.dependencies.BufferController = function () {
 
             if (seeking) {
                 time = seekTarget;
+                this.debug.log("Working time is seek time: " + time);
             }
             else if (waitingForBuffer) {
                 time = mseGetDesiredTime();
+                this.debug.log("Working time is mse time: " + time);
             }
             else {
                 time = this.videoModel.getCurrentTime();
+                this.debug.log("Working time is video time: " + time);
             }
 
             return time;
@@ -367,6 +370,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 currentTime = getWorkingTime.call(self);
 
             self.debug.log("BufferController.validate() | state: " + state);
+            self.debug.log("Playback rate: " + self.videoModel.getElement().playbackRate);
             self.debug.log("Working time: " + currentTime);
             self.debug.log("Video time: " + currentVideoTime);
 

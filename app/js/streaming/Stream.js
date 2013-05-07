@@ -481,8 +481,13 @@ MediaPlayer.dependencies.Stream = function () {
                             }
                         );
                     } else {
-                        self.debug.log("Got VOD content.  Starting playback.");
-                        play.call(self);
+                        self.manifestExt.getPresentationOffset(self.manifestModel.getValue()).then(
+                            function (offset) {
+                                self.debug.log("Got VOD content.  Starting playback at offset: " + offset);
+                                seek.call(self, offset);
+                                //play.call(self);
+                            }
+                        );
                     }
                 }
             );

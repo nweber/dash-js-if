@@ -564,7 +564,7 @@ Dash.dependencies.DashHandler = function () {
                 deferred = Q.defer();
 
             // get the last time again to be safe
-            bufferedIndex = index - 1;
+            bufferedIndex = index; // - 1;
             if (bufferedIndex < 0) {
                 bufferedIndex = 0;
             }

@@ -272,6 +272,21 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(codec);
     },
 
+    getSegmentInfoFor: function (representation) {
+        if (representation.hasOwnProperty("SegmentBase")) {
+            return representation.SegmentBase;
+        }
+        else if (representation.hasOwnProperty("SegmentList")) {
+            return representation.SegmentList;
+        }
+        else if (representation.hasOwnProperty("SegmentTemplate")) {
+            return representation.SegmentTemplate;
+        }
+        else {
+            return null;
+        }
+    },
+
     getLiveOffset: function (manifest) {
         "use strict";
         var delay = 15;
@@ -287,7 +302,8 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         var time = 0,
             fStart = 1,
             fDuration,
-            fTimescale = 1;
+            fTimescale = 1,
+            representation;
 
         // We don't really care what representation we use; they should all start at the same time.
         // Just grab the first representation; if this isn't there, we have bigger problems.
@@ -372,6 +388,38 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return deferred.promise;
     },
 
+    getPresentationOffset: function (manifest) {
+        var time = 0,
+            offset,
+            timescale = 1,
+            representation,
+            segmentInfo;
+
+        // We don't really care what representation we use; they should all start at the same time.
+        // Just grab the first representation; if this isn't there, we have bigger problems.
+        // TODO : The presentationTimeOffset can be described in each representation...
+        // Can it vary (be different times) between audio/video streams in the same Period?
+        // If it can we're probably ok, there just won't be any content for the difference in time.
+        // THIS WON'T WORK IN THE CURRENT PLAYER THOUGH!
+        // The stream without content will force the player to stall because it thinks it's waiting
+        // for data.  This will have to be fixed on the BufferController.
+        // For now let's assume that the presentationTimeOffset is the same between all representations.
+        representation = manifest.Period_asArray[0].AdaptationSet_asArray[0].Representation_asArray[0];
+        segmentInfo = this.getSegmentInfoFor(representation);
+
+        if (segmentInfo.hasOwnProperty("presentationTimeOffset")) {
+            offset = segmentInfo.presentationTimeOffset;
+
+            if (segmentInfo.hasOwnProperty("timescale")) {
+                timescale = segmentInfo.timescale;
+            }
+
+            time = offset / timescale;
+        }
+
+        return Q.when(time);
+    },
+
     getIsDVR: function (manifest, isLive) {
         "use strict";
         var containsDVR,
@@ -388,7 +436,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         var isOnDemand = false;
 
         if (manifest.profiles && manifest.profiles.length > 0) {
-            isOnDemand = (manifest.profiles.indexOf("urn:mpeg:dash:profile:isoff-on-demand:201") !== -1);
+            isOnDemand = (manifest.profiles.indexOf("urn:mpeg:dash:profile:isoff-on-demand:2011") !== -1);
         }
 
         return Q.when(isOnDemand);

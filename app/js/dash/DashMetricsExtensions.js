@@ -85,8 +85,11 @@ Dash.dependencies.DashMetricsExtensions = function () {
                 contentType = contentComponent.contentType;
             }
 
-            contentType = contentType.toLowerCase();
-            bufferType = bufferType.toLowerCase();
+            if (contentType !== undefined && contentType !== null)
+                contentType = contentType.toLowerCase();
+
+            if (bufferType !== undefined && bufferType !== null)
+                bufferType = bufferType.toLowerCase();
 
             if (contentType.indexOf(bufferType) !== -1) {
                 found = true;

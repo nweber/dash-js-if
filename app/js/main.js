@@ -336,52 +336,215 @@ function initStreamData() {
     "use strict";
     streams = {};
 
-    streams.ipvidnetLive = {url: "http://dash-live-path1.edgesuite.net/dash/manifest.mpd", isLive: true};
-    streams.uspLive = {url: "http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020", isLive: true};
-    streams.wowzaList = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvsegment.mpd", isLive: true};
-    streams.wowzaTemplate = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvchunk.mpd", isLive: true};
-    streams.wowzaTimeline = {url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvtime.mpd", isLive: true};
-    streams.thomsonLive = {url: "http://tvnlive.dashdemo.edgesuite.net/live/manifest.mpd", isLive: true};
+    streams.ipvidnetLive = {
+        url: "http://dash-live-path1.edgesuite.net/dash/manifest.mpd",
+        isLive: true
+    };
 
-    streams.microsoft1 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_MP4_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoft2 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoft3 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoft4 = {url: "http://origintest.cloudapp.net/media/MPTExpressionData01/ElephantsDream_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoft5 = {url: "http://origintest.cloudapp.net/media/MPTExpressionData02/BigBuckBunny_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)", isLive: false};
+    streams.uspLive = {
+        url: "http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020",
+        isLive: true
+    };
 
-    streams.microsoftCenc1 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/CENC/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoftCenc2 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/NoSubSampleAdjustment/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoftCenc3 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/NoSubSampleAdjustmentNoSenc/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoftCenc4 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_CENC/CENC/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoftCenc5 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_CENC/NoSubSampleAdjustment/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)", isLive: false};
-    streams.microsoftCenc6 = {url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_CENC/NoSubSampleAdjustmentNoSenc/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)", isLive: false};
+    streams.wowzaList = {
+        url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvsegment.mpd",
+        isLive: true
+    };
 
-    streams.archive = {url: "http://dash.edgesuite.net/dash264/TestCases/1b/thomson-networks/manifest.mpd", isLive: false};
-    streams.live = {url: "http://dashdemo.edgesuite.net/mediaexcel/live/ch1/dash.mpd", isLive: true}; //"http://venus.mediaexcel.com/hera/videos/ch1/dash.mpd";
-    streams.list = {url: "http://www.digitalprimates.net/dash/streams/gpac/mp4-main-multi-mpd-AV-NBS.mpd", isLive: false};
-    streams.template = {url: "http://www.digitalprimates.net/dash/streams/mp4-live-template/mp4-live-mpd-AV-BS.mpd", isLive: false};
-    streams.timeline = {url: "http://demo.unified-streaming.com/video/ateam/ateam.ism/ateam.mpd", isLive: false};
-    streams.base = {url: "http://www.digitalprimates.net/dash/streams/mp4-onDemand/mp4-onDemand-mpd-AV.mpd", isLive: false};
-    streams.youtube = {url: "http://yt-dash-mse-test.commondatastorage.googleapis.com/car-20120827-manifest.mpd", isLive: false};
-    streams.bunny = {url: "http://dash.edgesuite.net/adobe/bbb/bbb.mpd", isLive: false};
-    streams.envivio = {url: "http://dash.edgesuite.net/envivio/dashpr/clear/Manifest.mpd ", isLive: false};
+    streams.wowzaTemplate = {
+        url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvchunk.mpd",
+        isLive: true
+    };
 
-    streams["1a-netflix"] = {url: "http://dash.edgesuite.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd", isLive: false};
-    streams["1a-sony"] = {url: "http://dash.edgesuite.net/dash264/TestCases/1a/sony/SNE_DASH_SD_CASE1A_REVISED.mpd", isLive: false};
-    streams["1b-envivio"] = {url: "http://dash.edgesuite.net/dash264/TestCases/1b/envivio/manifest.mpd", isLive: false};
-    streams["1b-thomson"] = {url: "http://dash.edgesuite.net/dash264/TestCases/1b/thomson-networks/manifest.mpd", isLive: false};
-    streams["1c-envivio"] = {url: "http://dash.edgesuite.net/dash264/TestCases/1c/envivio/manifest.mpd", isLive: false};
-    streams["2a-envivio"] = {url: "http://dash.edgesuite.net/dash264/TestCases/2a/envivio/manifest.mpd", isLive: false};
-    streams["2a-sony"] = {url: "http://dash.edgesuite.net/dash264/TestCases/2a/sony/SNE_DASH_CASE_2A_SD_REVISED.mpd", isLive: false};
-    streams["2a-thomson"] = {url: "http://dash.edgesuite.net/dash264/TestCases/2a/thomson-networks/manifest.mpd", isLive: false};
-    streams["3a-fraunhofer"] = {url: "http://dash.edgesuite.net/dash264/TestCases/3a/fraunhofer/ed.mpd", isLive: false};
-    streams["3b-fraunhofer"] = {url: "http://dash.edgesuite.net/dash264/TestCases/3b/fraunhofer/elephants_dream_heaac2_0.mpd", isLive: false};
-    streams["3b-sony"] = {url: "http://dash.edgesuite.net/dash264/TestCases/3b/sony/SNE_DASH_CASE3B_SD_REVISED.mpd", isLive: false};
-    streams["4b-sony"] = {url: "http://dash.edgesuite.net/dash264/TestCases/4b/sony/SNE_DASH_CASE4B_SD_REVISED.mpd", isLive: false};
-    streams["5a-thomson/envivio"] = {url: "http://dash.edgesuite.net/dash264/TestCases/5a/1/manifest.mpd", isLive: false};
-    streams["5b-thomson/envivio"] = {url: "http://dash.edgesuite.net/dash264/TestCases/5b/1/manifest.mpd", isLive: false};
-    streams["6c-envivio1"] = {url: "http://dash.edgesuite.net/dash264/TestCases/6c/envivio/manifest.mpd", isLive: false};
-    streams["6c-envivio2"] = {url: "http://dash.edgesuite.net/dash264/TestCases/6c/envivio/manifest2.mpd", isLive: false};
+    streams.wowzaTimeline = {
+        url: "http://174.129.39.107:1935/livedash/myStream/manifest_mpm4sav_mvtime.mpd",
+        isLive: true
+    };
+
+    streams.thomsonLive = {
+        url: "http://tvnlive.dashdemo.edgesuite.net/live/manifest.mpd",
+        isLive: true
+    };
+
+    streams.microsoft1 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_MP4_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoft2 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoft3 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoft4 = {
+        url: "http://origintest.cloudapp.net/media/MPTExpressionData01/ElephantsDream_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoft5 = {
+        url: "http://origintest.cloudapp.net/media/MPTExpressionData02/BigBuckBunny_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoftCenc1 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/CENC/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoftCenc2 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/NoSubSampleAdjustment/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoftCenc3 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/NoSubSampleAdjustmentNoSenc/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoftCenc4 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_CENC/CENC/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoftCenc5 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_CENC/NoSubSampleAdjustment/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.microsoftCenc6 = {
+        url: "http://origintest.cloudapp.net/media/SintelTrailer_Smooth_from_WAME_CENC/NoSubSampleAdjustmentNoSenc/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+        isLive: false
+    };
+
+    streams.archive = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/1b/thomson-networks/manifest.mpd",
+        isLive: false
+    };
+
+    streams.live = {
+        url: "http://dashdemo.edgesuite.net/mediaexcel/live/ch1/dash.mpd",
+        isLive: true
+    };
+
+    streams.list = {
+        url: "http://www.digitalprimates.net/dash/streams/gpac/mp4-main-multi-mpd-AV-NBS.mpd",
+        isLive: false
+    };
+
+    streams.template = {
+        url: "http://www.digitalprimates.net/dash/streams/mp4-live-template/mp4-live-mpd-AV-BS.mpd",
+        isLive: false
+    };
+
+    streams.timeline = {
+        url: "http://demo.unified-streaming.com/video/ateam/ateam.ism/ateam.mpd",
+        isLive: false
+    };
+
+    streams.base = {
+        url: "http://www.digitalprimates.net/dash/streams/mp4-onDemand/mp4-onDemand-mpd-AV.mpd",
+        isLive: false
+    };
+
+    streams.youtube = {
+        url: "http://yt-dash-mse-test.commondatastorage.googleapis.com/car-20120827-manifest.mpd",
+        isLive: false
+    };
+
+    streams.bunny = {
+        url: "http://dash.edgesuite.net/adobe/bbb/bbb.mpd",
+        isLive: false
+    };
+
+    streams.envivio = {
+        url: "http://dash.edgesuite.net/envivio/dashpr/clear/Manifest.mpd",
+        isLive: false
+    };
+
+    streams["1a-netflix"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd",
+        isLive: false
+    };
+
+    streams["1a-sony"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/1a/sony/SNE_DASH_SD_CASE1A_REVISED.mpd",
+        isLive: false
+    };
+
+    streams["1b-envivio"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/1b/envivio/manifest.mpd",
+        isLive: false
+    };
+
+    streams["1b-thomson"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/1b/thomson-networks/manifest.mpd",
+        isLive: false
+    };
+
+    streams["1c-envivio"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/1c/envivio/manifest.mpd",
+        isLive: false
+    };
+
+    streams["2a-envivio"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/2a/envivio/manifest.mpd",
+        isLive: false
+    };
+
+    streams["2a-sony"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/2a/sony/SNE_DASH_CASE_2A_SD_REVISED.mpd",
+        isLive: false
+    };
+
+    streams["2a-thomson"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/2a/thomson-networks/manifest.mpd",
+        isLive: false
+    };
+
+    streams["3a-fraunhofer"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/3a/fraunhofer/ed.mpd",
+        isLive: false
+    };
+
+    streams["3b-fraunhofer"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/3b/fraunhofer/elephants_dream_heaac2_0.mpd",
+        isLive: false
+    };
+
+    streams["3b-sony"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/3b/sony/SNE_DASH_CASE3B_SD_REVISED.mpd",
+        isLive: false
+    };
+
+    streams["4b-sony"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/4b/sony/SNE_DASH_CASE4B_SD_REVISED.mpd",
+        isLive: false
+    };
+
+    streams["5a-thomson/envivio"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/5a/1/manifest.mpd",
+        isLive: false
+    };
+
+    streams["5b-thomson/envivio"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/5b/1/manifest.mpd",
+        isLive: false
+    };
+
+    streams["6c-envivio1"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/6c/envivio/manifest.mpd",
+        isLive: false
+    };
+
+    streams["6c-envivio2"] = {
+        url: "http://dash.edgesuite.net/dash264/TestCases/6c/envivio/manifest2.mpd",
+        isLive: false
+    };
 }
 
 function initStreamSources( browserVersion ) {
