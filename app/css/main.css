@@ -1,5 +1,5 @@
 body {
-    background-color: #E5E5E5;
+    background-color:  #E5E5E5; /*rgb(102, 102, 102);*/
     font-size: 11px;
     font-family: "Lato", sans-serif;
     height: auto;
@@ -24,18 +24,87 @@ p {
     text-align: left;
 }
 
+/* If the width and height is not set on the html element, a white space will appear at the bottom when a user selects a feed. */
+html {
+    width: 100%;
+    height: 100%;
+}
+
+/* Background color overrides */
+/*.dk_toggle {
+    background-color: rgb(122, 75, 115);
+}
+.dk_toggle:hover, .dk_toggle:focus, .dk_focus .dk_toggle {
+    background-color: rgb(64, 46, 74);
+}
+.dk_toggle:active {
+    background-color: rgb(64, 46, 74);
+}
+
+.dk_open .dk_toggle {
+    background-color: rgb(64, 46, 74);
+}
+
+.dk_open .dk_toggle .select-icon {
+    background-color: rgb(64, 46, 74);
+}
+.select-icon {
+    background-color: rgb(122, 75, 115);
+}
+
+.dk_options a:hover {
+    background-color: rgb(64, 46, 74);
+}
+
+.dk_option_current a {
+    background-color: rgb(64, 46, 74);
+}
+.toggle .toggle-radio {
+    color: rgb(122, 75, 115);
+}
+
+input[type="checkbox"]:focus {
+    color: rgb(122, 75, 115);
+}
+
+.btn.btn-primary {
+    background-color: rgb(122, 75, 115);
+}
+.btn.btn-primary:active, .btn.btn-primary.active{
+    background-color: rgb(64, 46, 74);
+}
+
+.btn.btn-primary:hover, .btn.btn-primary:focus {
+    background-color: rgb(64, 46, 74);
+}*/
+
 /* This is to get around a sizing issue with dropkick */
 .dk_options {
     width: 460px;
 }
+
 .demo-panel-title-header {
-    float: left;
     padding-top: 3px;
+    float: left;
+    margin-left: 120px;
+    margin-right: 100px;
 }
 
 .image {
     float: right;
     height: 50px;
+}
+
+.path1_image {
+}
+
+.path1_image_box {
+    float: left;
+    padding: 5px;
+    background-color: rgb(122, 75, 115);
+    position: absolute;
+    border-left: 2px solid #dce4ec;
+    border-right: 2px solid #dce4ec;
 }
 
 .title-header {
@@ -88,14 +157,14 @@ p {
 .tooltip-box-top {
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
-    
-    border-top: 2px solid #dce4ec;    
+
+    border-top: 2px solid #dce4ec;
 }
 
 .tooltip-box-bottom {
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
-    
+
     border-bottom: 2px solid #dce4ec;
 }
 

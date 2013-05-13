@@ -117,47 +117,34 @@
 <body onload="init()">
     <div class="container">
         <div class="row title-header">
-            <h4>Compatibility Notes:</h4>
-            <div>
-                Chrome is the only browser supported.<br/>
-                Use the most up-to-date version of Chrome for the best compatibility.<br/>
-                Many of the streams in the dropdown box only work in the developer channel or Canary versions of Chrome.<br/>
+            <div class="tooltip-box-top tooltip-box-bottom path1_image_box">
+                <a href="http://www.path1.com/"><img class="path1_image" src="app/img/path1.png"/></a>
             </div>
-        </div>
-
-        <div class="row title-header">
-            <h3 class="demo-panel-title-header">Dash IF JavaScript Player</h3>
-            <img class="image" src="app/img/dp.png"/>
+            <h3 class="demo-panel-title-header">Path 1 MPEG DASH Javascript Client</h3>
+            <a href="http://www.digitalprimates.com/"><img class="image" src="app/img/dp.png"/></a>
         </div>
 
         <div class="row">
             <div class="span6">
                 <select id="sources" class="span6">
-                    <!--
-                        NOTE:
-                        The data-channels attribute corresponds to the Chrome Browser release in which the feed
-                        will play in.
-                        b -> Beta
-                        c -> Canary
-                        d -> Development
-                        s -> Stable
-                    -->
-
                     <option data-channels="" value="ipvidnetLive">Path 1 Live</option>
+                    <!--
                     <option data-channels="" value="uspLive">Unified Streaming Live</option>
                     <option data-channels="" value="wowzaList">Wowza SegmentList</option>
                     <option data-channels="" value="wowzaTemplate">Wowza SegmentTemplate</option>
                     <option data-channels="" value="wowzaTimeline">Wowza SegmentTimeline</option>
                     <option data-channels="" value="thomsonLive">Thomson Live</option>
+                    -->
                     <!--<option data-channels="" value="live">Live</option>-->
-
+                    <!--
                     <option data-channels="cd" value="archive">Live Archive</option>
                     <option data-channels="cdsb" value="envivio" selected="selected">Envivio</option>
                     <option data-channels="cdsb" value="list">Segment List</option>
                     <option data-channels="cdsb" value="template">Segment Template</option>
-                    <option data-channels="cdsb" value="timeline">Segment Timeline</option>
+                    <option data-channels="cdsb" value="timeline">Unified Streaming - Timeline</option>
+                    -->
                     <!--<option data-channels="" value="youtube">YouTube SegmentBase</option>--> <!-- Invalid manifest, wrong audio codec.  Should be mp4a.40.2. -->
-
+                    <!--
                     <option data-channels="cd" value="microsoft1">Microsoft #1</option>
                     <option data-channels="cd" value="microsoft2">Microsoft #2</option>
                     <option data-channels="cd" value="microsoft3">Microsoft #3</option>
@@ -187,6 +174,7 @@
                     <option data-channels="cd" value="5b-thomson/envivio">DASH-AVC/264 – test vector 5b - Thomson/Envivio</option>
                     <option data-channels="" value="6c-envivio1">DASH-AVC/264 – test vector 6c - Envivio Manifest 1</option>
                     <option data-channels="" value="6c-envivio2">DASH-AVC/264 – test vector 6c - Envivio Manifest 2</option>
+                    -->
                 </select>
             </div>
             <div class="span4"></div>
