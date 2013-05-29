@@ -132,9 +132,7 @@
                         d -> Development
                         s -> Stable
                     -->
-<!--
                     <option data-channels="" value="sony_dp">Sony DP</option>
--->
                     <option data-channels="" value="fraunhofer_480p_heacc2_0_dream">Fraunhofer - HEACC 2.0 - Dream</option>
                     <option data-channels="" value="fraunhofer_480p_heacc2_0_sintel">Fraunhofer - HEACC 2.0 - Sintel</option>
                     <option data-channels="" value="fraunhofer_480p_heacc5_1_6chId">Fraunhofer - HEACC 5.1 - 6 CH ID</option>
@@ -217,6 +215,12 @@
             <div class="span9" style="float: left;">
                 <div class="dash-video-player">
                     <video controls="true"></video>
+                </div>
+            </div>
+            <div class="span3">
+                <div class="statsbox" style="height: 40px;">
+                    <span class="stats-label" style="line-height: 40px;">Buffer Time</span>
+                    <input type="text" id="buffer-time-source" style="float: right; width: 50px"/>
                 </div>
             </div>
             <div class="span3">

@@ -380,9 +380,11 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getPresentationOffset: function (manifest) {
-        var time = 0,
+        var start = 0,
+            time = 0,
             offset,
             timescale = 1,
+            period,
             representation,
             segmentInfo;
 
@@ -395,8 +397,13 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         // The stream without content will force the player to stall because it thinks it's waiting
         // for data.  This will have to be fixed on the BufferController.
         // For now let's assume that the presentationTimeOffset is the same between all representations.
-        representation = manifest.Period_asArray[0].AdaptationSet_asArray[0].Representation_asArray[0];
+        period = manifest.Period_asArray[0];
+        representation = period.AdaptationSet_asArray[0].Representation_asArray[0];
         segmentInfo = this.getSegmentInfoFor(representation);
+
+        if (period.hasOwnProperty("start")) {
+            start = period.start;
+        }
 
         if (segmentInfo !== null && segmentInfo !== undefined && segmentInfo.hasOwnProperty("presentationTimeOffset")) {
             offset = segmentInfo.presentationTimeOffset;
@@ -408,7 +415,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             time = offset / timescale;
         }
 
-        return Q.when(time);
+        return Q.when(start + time);
     },
 
     getIsDVR: function (manifest, isLive) {

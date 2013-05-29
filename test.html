@@ -78,7 +78,13 @@
             console.log("OPENED");
             console.log(value);
 
-            sourceBuffer = ms.addSourceBuffer(value);
+            try {
+                sourceBuffer = ms.addSourceBuffer(value);
+            }
+            catch (err) {
+                alert("Error creating source buffer!");
+                console.log(err);
+            }
 
             loadInit();
         }
