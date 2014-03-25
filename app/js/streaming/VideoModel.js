@@ -91,6 +91,10 @@ MediaPlayer.models.VideoModel = function () {
             element.playbackRate = value;
         },
 
+        getDuration: function () {
+            return element.duration;
+        },
+
         getCurrentTime: function () {
             return element.currentTime;
         },

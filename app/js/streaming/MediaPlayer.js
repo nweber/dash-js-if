@@ -209,3 +209,4 @@ MediaPlayer.vo = {};
 MediaPlayer.vo.metrics = {};
 MediaPlayer.rules = {};
 MediaPlayer.di = {};
+MediaPlayer.sinclair = {};

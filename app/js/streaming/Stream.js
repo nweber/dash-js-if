@@ -26,6 +26,7 @@ MediaPlayer.dependencies.Stream = function () {
         textController = null,
         textTrackIndex = -1,
         autoPlay = true,
+        playing,
         initialized = false,
         load,
         errored = false,
@@ -55,11 +56,13 @@ MediaPlayer.dependencies.Stream = function () {
             }
 
             this.debug.log("Do play.");
+            playing = true;
             this.videoModel.play();
         },
 
         pause = function () {
             this.debug.log("Do pause.");
+            playing = false;
             this.videoModel.pause();
         },
 
@@ -72,8 +75,8 @@ MediaPlayer.dependencies.Stream = function () {
 
             this.debug.log("Do seek: " + time);
 
-            this.system.notify("setCurrentTime");
-            this.videoModel.setCurrentTime(time);
+            //this.system.notify("setCurrentTime");
+            //this.videoModel.setCurrentTime(time);
 
             if (videoController) {
                 videoController.seek(time);
@@ -81,6 +84,9 @@ MediaPlayer.dependencies.Stream = function () {
             if (audioController) {
                 audioController.seek(time);
             }
+
+            playing = true;
+            this.videoModel.play();
         },
 
         // Encrypted Media Extensions
@@ -662,6 +668,61 @@ MediaPlayer.dependencies.Stream = function () {
             );
         },
 
+        blackoutTime,
+
+        checkAvailable = function () {
+            var deferred = Q.defer(),
+                req = new XMLHttpRequest(),
+                ENDPOINT = "http://localhost/~nweber/sinclair/server.json";
+
+            req.open("GET", ENDPOINT, true);
+            req.responseType = "json";
+
+            req.onload = function () {
+                var data = req.response;
+                if (data.available === "true") {
+                    deferred.resolve(true);
+                }
+                else {
+                    deferred.resolve(false);
+                }
+            };
+
+            req.onerror = function () {
+                deferred.resolve(false);
+            }
+
+            req.send();
+
+            return deferred.promise;
+        },
+
+        onTimer = function () {
+            var self = this;
+
+            checkAvailable().then(
+                function (available) {
+                    if (!available) {
+                        if (playing) {
+                            blackoutTime = new Date();
+                            pause.call(self);
+                        }
+                    }
+                    else {
+                        if (!playing) {
+                            var delay = self.videoModel.getCurrentTime() + ((new Date().getTime() - blackoutTime.getTime()) / 1000) - 0.1;
+                            seek.call(self, delay);
+                        }
+                    }
+                }
+            );
+        },
+
+        startMonitor = function () {
+            var self = this,
+                timer = setInterval(onTimer.bind(self), 250, self);
+        },
+
         initPlayback = function() {
             var self = this,
                 manifest = self.manifestModel.getValue(),
@@ -683,6 +744,7 @@ MediaPlayer.dependencies.Stream = function () {
                 );
             }
 
+            startMonitor.call(self);
         },
 
         currentTimeChanged = function () {

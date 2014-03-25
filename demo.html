@@ -6,16 +6,6 @@
     <meta name="description" content="" />
     <link rel="icon" type="image/png" href="http://dashpg.com/w/2012/09/dashif.ico" />
 
-    <!-- http://jquery.com/ -->
-    <script src="app/lib/jquery/jquery-1.10.2.min.js"></script>
-
-    <!-- http://angularjs.org/ -->
-    <script src="app/lib/angular/angular.min.js"></script>
-    <script src="app/lib/angular/angular-resource.min.js"></script>
-
-    <!-- http://getbootstrap.com/ -->
-    <script src="app/lib/bootstrap/js/bootstrap.min.js"></script>
-
     <!-- https://github.com/kriskowal/q -->
     <script src="app/lib/q.js"></script>
 
@@ -30,12 +20,6 @@
     <script src="app/lib/objectiron.js"></script>
     <script src="app/lib/long.js"></script>
     <script src="app/lib/Math.js"></script>
-
-    <!-- http://www.flotcharts.org/ -->
-    <script src="app/lib/flot/jquery.flot.js"></script>
-
-    <!-- https://github.com/eu81273/angular.treeview -->
-    <script src="app/lib/angular.treeview/angular.treeview.min.js"></script>
 
     <!-- Player -->
     <script src="app/js/streaming/MediaPlayer.js"></script>
@@ -95,6 +79,10 @@
     <script src="app/js/dash/DashManifestExtensions.js"></script>
     <script src="app/js/dash/DashMetricsExtensions.js"></script>
 
+    <!-- Sinclair -->
+    <script src="app/js/sinclair/SinclairManifestExtensions.js"></script>
+    <script src="app/js/sinclair/SinclairContext.js"></script>
+
     <script>
         function getUrlVars() {
             var vars = {};
@@ -116,13 +104,13 @@
             }
 
             video = document.querySelector(".dash-video-player video");
-            context = new Dash.di.DashContext();
+            context = new MediaPlayer.sinclair.SinclairContext();
             player = new MediaPlayer(context);
 
             player.startup();
 
             player.attachView(video);
-            player.setAutoPlay(false);
+            player.setAutoPlay(true);
 
             player.attachSource(url);
         }
@@ -137,7 +125,7 @@
 
     <body onload="startVideo()">
         <div class="dash-video-player">
-            <video controls="true"></video>
+            <video></video>
         </div>
     </body>
 </html>

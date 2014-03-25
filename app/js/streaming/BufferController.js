@@ -81,7 +81,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
             return Q.when(isLive);
         },
-/*
+
         setCurrentTimeOnVideo = function (time) {
             var ct = this.videoModel.getCurrentTime();
             if (ct === time) {
@@ -92,7 +92,7 @@ MediaPlayer.dependencies.BufferController = function () {
             this.system.notify("setCurrentTime");
             this.videoModel.setCurrentTime(time);
         },
-*/
+
         startPlayback = function () {
             if (!ready || !started) {
                 return;
@@ -210,7 +210,21 @@ MediaPlayer.dependencies.BufferController = function () {
                                             self.debug.log("Buffered " + type + " Range: " + ranges.start(i) + " - " + ranges.end(i));
                                         }
                                     }
-                                    finishValidation.call(self);
+
+                                    if (seeking) {
+                                        self.sourceBufferExt.getBufferRange(buffer, seekTarget).then(
+                                            function (range) {
+                                                if (range !== null) {
+                                                    seeking = false;
+                                                    setCurrentTimeOnVideo.call(self, seekTarget);
+                                                }
+                                                finishValidation.call(self);
+                                            }
+                                        );
+                                    }
+                                    else {
+                                        finishValidation.call(self);
+                                    }
                                 });
                             }
                         );
@@ -280,7 +294,13 @@ MediaPlayer.dependencies.BufferController = function () {
                 //time = self.videoModel.getCurrentTime();
                 self.debug.log("Data changed - loading the " + type + " fragment for time: " + playingTime);
                 promise = self.indexHandler.getSegmentRequestForTime(playingTime - timestampOffset - liveOffset, quality, data);
-            } else {
+            }
+            else if (seeking) {
+                //time = self.videoModel.getCurrentTime();
+                self.debug.log("Seeking - loading the " + type + " fragment for time: " + seekTarget);
+                promise = self.indexHandler.getSegmentRequestForTime(seekTarget, quality, data);
+            }
+            else {
                 var deferred = Q.defer(),
                     segmentTime = self.videoModel.getCurrentTime();
 
@@ -410,17 +430,18 @@ MediaPlayer.dependencies.BufferController = function () {
         getWorkingTime = function () {
             var time = -1;
 
-            /* seeking gets stuck on when the buffer already has the segment containing seekTarget appended
+            // seeking gets stuck on when the buffer already has the segment containing seekTarget appended
             if (seeking) {
                 time = seekTarget;
                 this.debug.log("Working time is seek time: " + time);
             }
-            else
-            if (waitingForBuffer && !seeking) {
+            /*
+            else if (waitingForBuffer && !seeking) {
                 time = mseGetDesiredTime();
                 this.debug.log("Working time is mse time: " + time);
-            } else
+            }
             */
+            else
             {
                 time = this.videoModel.getCurrentTime();
                 this.debug.log("Working time is video time: " + time);
@@ -504,8 +525,6 @@ MediaPlayer.dependencies.BufferController = function () {
                                         }
                                     );
                                 } else {
-                                    seeking = false;
-
                                     if (state === VALIDATING) {
                                         setState.call(self, READY);
                                     }
