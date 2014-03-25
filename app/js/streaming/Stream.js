@@ -67,16 +67,18 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         seek = function (time) {
-            this.debug.log("Attempting seek...");
+            var self = this;
+
+            self.debug.log("Attempting seek...");
 
             if (!initialized) {
                 return;
             }
 
-            this.debug.log("Do seek: " + time);
+            self.debug.log("Do seek: " + time);
 
-            //this.system.notify("setCurrentTime");
-            //this.videoModel.setCurrentTime(time);
+            //self.system.notify("setCurrentTime");
+            //self.videoModel.setCurrentTime(time);
 
             if (videoController) {
                 videoController.seek(time);
@@ -86,7 +88,14 @@ MediaPlayer.dependencies.Stream = function () {
             }
 
             playing = true;
-            this.videoModel.play();
+
+            function seekedHandler () {
+                self.videoModel.play();
+                self.videoModel.unlisten("seeked", sh);
+            }
+
+            var sh = seekedHandler.bind(this);
+            self.videoModel.listen("seeked", sh);
         },
 
         // Encrypted Media Extensions

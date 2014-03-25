@@ -18,14 +18,14 @@ MediaPlayer.dependencies.BufferExtensions = function () {
 
     return {
         decideBufferLength: function (minBufferTime) {
-            bufferTime = 4;
-
+            bufferTime = 1;
+/*
             if (isNaN(minBufferTime) || minBufferTime <= 0) {
                 bufferTime = 4;
             } else {
                 bufferTime = minBufferTime;
             }
-
+*/
             return Q.when(bufferTime);
         },
 
