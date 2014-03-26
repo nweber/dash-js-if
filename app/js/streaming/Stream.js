@@ -682,7 +682,7 @@ MediaPlayer.dependencies.Stream = function () {
         checkAvailable = function () {
             var deferred = Q.defer(),
                 req = new XMLHttpRequest(),
-                ENDPOINT = "http://localhost/~nweber/sinclair/server.json";
+                ENDPOINT = "http://localhost/~nweber/dash.js/server.json";
 
             req.open("GET", ENDPOINT, true);
             req.responseType = "json";
