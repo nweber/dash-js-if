@@ -110,9 +110,11 @@
 
             player.attachSource(url);
 
+            // DEBUG - REMOVE ME!
             setInterval(function () {
                 $("#debug").text("Current time: " + player.getVideoModel().getCurrentTime());
-            }, 800)
+            }, 800);
+            // ------------------
         }
     </script>
 
@@ -132,7 +134,9 @@
             <button onclick="play1()">Play Stream #1</button>
         </div>
 
+        <!-- DEBUG - REMOVE ME! -->
         <div id="debug"></div>
+        <!-- ------------------ -->
 
         <div class="dash-video-player">
             <video></video>
