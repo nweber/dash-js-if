@@ -5,7 +5,7 @@ MediaPlayer.sinclair.SinclairManifestExtensions = function () {
     this.getPresentationOffset = function (manifest, periodIndex) {
         var deferred = Q.defer(),
         	req = new XMLHttpRequest(),
-        	ENDPOINT = "http://localhost/~nweber/dash.js/server.json";
+        	ENDPOINT = MediaPlayer.sinclair.SinclairConstants.SERVER;
 
 		req.open("GET", ENDPOINT, true);
 		req.responseType = "json";
@@ -13,7 +13,7 @@ MediaPlayer.sinclair.SinclairManifestExtensions = function () {
 		req.onload = function () {
 			var data = req.response,
 				f = data.fragment,
-				t = new Date(new Date().getTime() - 3000); /// three seconds ago //new Date(data.time);
+				t = new Date(data.time);
 			
 			// no fragment, so start at the beginning
 			if (f === "" || f === null || f === undefined) {

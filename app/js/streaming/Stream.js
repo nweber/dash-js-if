@@ -682,7 +682,7 @@ MediaPlayer.dependencies.Stream = function () {
         checkAvailable = function () {
             var deferred = Q.defer(),
                 req = new XMLHttpRequest(),
-                ENDPOINT = "http://localhost/~nweber/dash.js/server.json";
+                ENDPOINT = MediaPlayer.sinclair.SinclairConstants.SERVER;
 
             req.open("GET", ENDPOINT, true);
             req.responseType = "json";
@@ -729,7 +729,7 @@ MediaPlayer.dependencies.Stream = function () {
 
         startMonitor = function () {
             var self = this,
-                timer = setInterval(onTimer.bind(self), 250, self);
+                timer = setInterval(onTimer.bind(self), 500, self);
         },
 
         initPlayback = function() {

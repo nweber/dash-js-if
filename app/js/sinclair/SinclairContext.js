@@ -1,3 +1,7 @@
+MediaPlayer.sinclair.SinclairConstants = {
+	SERVER: "http://63.88.63.42/mpegdash-stream/api/"
+}
+
 MediaPlayer.sinclair.SinclairContext = function () {
     "use strict";
 
