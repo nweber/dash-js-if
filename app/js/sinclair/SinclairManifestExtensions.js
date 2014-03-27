@@ -15,6 +15,12 @@ MediaPlayer.sinclair.SinclairManifestExtensions = function () {
 				f = data.fragment,
 				t = new Date(new Date().getTime() - 3000); /// three seconds ago //new Date(data.time);
 			
+			// no fragment, so start at the beginning
+			if (f === "" || f === null || f === undefined) {
+				deferred.resolve(0);
+				return;
+			}
+
 			f = f.substring(f.lastIndexOf("/")+1);
 			f = f.substring(0, f.lastIndexOf("."));
 
