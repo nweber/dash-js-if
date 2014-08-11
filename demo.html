@@ -87,16 +87,13 @@
     <script src="app/js/sinclair/SinclairContext.js"></script>
 
     <script>
-        var MANIFEST_1 = "http://63.88.63.42/mpegdash-stream/stream1/manifest.mpd",
+        var SINCLAIR = "http://63.88.63.42/mpegdash-stream/sbgbase3mb30fps/male/male_manifest.mpd",
+            MANIFEST_1 = "http://63.88.63.42/mpegdash-stream/stream1/manifest.mpd",
             MANIFEST_2 = "http://63.88.63.42/mpegdash-stream/stream3/droid_livemanifest.mpd",
             SERVER = "http://63.88.63.42/mpegdash-stream/api/";
         
-        function play1 () {
-            startVideo(MANIFEST_1);
-        }
-
-        function play2 () {
-            startVideo(MANIFEST_2);
+        function playTest () {
+            startVideo(SINCLAIR);
         }
 
         function toggle () {
@@ -150,8 +147,7 @@
 
     <body>
         <div class="nav">
-            <button onclick="play1()">Play Stream #1</button>
-            <button onclick="play2()">Play Stream #2</button>
+            <button onclick="playTest()">Play Stream</button>
             <button onclick="toggle()">Toggle Server</button>
             <button onclick="reset()">Reset Server</button>
         </div>
@@ -161,7 +157,7 @@
         <!-- ------------------ -->
 
         <div class="dash-video-player">
-            <video></video>
+            <video controls="true"></video>
         </div>
     </body>
 </html>

@@ -81,10 +81,10 @@ MediaPlayer.dependencies.Stream = function () {
             //self.videoModel.setCurrentTime(time);
 
             if (videoController) {
-                videoController.seek(time);
+                videoController.seek(time + 1);
             }
             if (audioController) {
-                audioController.seek(time);
+                audioController.seek(time + 1);
             }
 
             playing = true;
@@ -96,6 +96,18 @@ MediaPlayer.dependencies.Stream = function () {
 
             var sh = seekedHandler.bind(this);
             self.videoModel.listen("seeked", sh);
+
+            function playedHandler () {
+                self.videoModel.play();
+                self.videoModel.unlisten("play", ph);
+            }
+
+            var ua = navigator.userAgent.toLowerCase();
+            var isAndroid = ua.indexOf("android") > -1; //&& ua.indexOf("mobile");
+            if(isAndroid) {
+                var ph = playedHandler.bind(this);
+                self.videoModel.listen("play", ph);
+            }
         },
 
         // Encrypted Media Extensions

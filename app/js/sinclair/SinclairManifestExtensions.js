@@ -61,7 +61,7 @@ MediaPlayer.sinclair.SinclairManifestExtensions = function () {
 			}
 
 			idx = parseInt(matches[k+1]);
-
+			
 			if (template.hasOwnProperty("startNumber")) {
 				idx -= template.startNumber;
 			}
@@ -74,11 +74,14 @@ MediaPlayer.sinclair.SinclairManifestExtensions = function () {
                 fTimescale = template.timescale;
             }
             fDuration = template.duration;
+            
+            var offset = (fDuration / fTimescale) * idx;
 
-            var offset = (fDuration / fTimescale) * idx,
-            	timeOffset = (new Date().getTime() - t.getTime()) / 1000;
+            var timeOffset = (new Date().getTime() - t.getTime()) / 1000;
+            //offset += timeOffset;
+            console.log("OFFSET CALCULATED AT: " + offset);
 
-			deferred.resolve(offset + timeOffset);
+            deferred.resolve(offset);
 		};
 
 		req.onerror = function () {
